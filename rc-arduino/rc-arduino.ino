@@ -1,15 +1,33 @@
 #include "buttons.h"
 #include "periodictask.h"
 
+
 #define FRONTBACK_PIN A0
 #define LEFTRIGHT_PIN A1
 #define CALIBRATION_PIN 3
+
+// indexes of bit information in Packet.buttons 0-7
+#define button_HORN 0
+#define button_BREAKS 1
+
+struct Packet {
+  unsigned char fbNormalized;
+  unsigned char lrNormalized;
+  unsigned char buttons;
+
+  Packet() {
+    fbNormalized = 0;
+    lrNormalized = 0;
+    buttons = 0;
+  }
+  
+};
 
 // flags
 bool CALIBRATING = false; // read-only value. should not be edited directly. Only through start/stopCalibration.
 bool TRANSMITTING = false;
 
-void readSensors();
+void readSensors(Packet& packet);
 
 void taskHandler(int dt) {
   Serial.println("task executed!");
@@ -35,10 +53,6 @@ int FB_ZERO = 1024/2; // sensible defaults
 int LR_ZERO = 1024/2; // sensible defaults
 int FB_MAX,FB_MIN = FB_ZERO; 
 int LR_MAX, LR_MIN = LR_ZERO;
-int FB = FB_ZERO;
-int LR = LR_ZERO;
-
-
 
 void setup() {
   Serial.begin(9600);
@@ -95,9 +109,11 @@ void calibrate() {
   LR_MIN = lr < LR_MIN ? lr : LR_MIN;
 }
 
+Packet packet;
+
 void loop() {
   // put your main code here, to run repeatedly:
-  readSensors();
+  readSensors(packet);
   //Serial.print("frontback: "); Serial.print(FB); 
   //Serial.print("leftright: "); Serial.print(LR);
   //Serial.println();
@@ -108,7 +124,24 @@ void loop() {
     calibrate();
 }
 
-void readSensors() {
-  FB = analogRead(FRONTBACK_PIN);
-  LR = analogRead(LEFTRIGHT_PIN);  
+// reads sensor values and prepares outgoing packet
+void readSensors(Packet& packet) {
+  long fb = analogRead(FRONTBACK_PIN);
+  long lr = analogRead(LEFTRIGHT_PIN);  
+  if (fb >= FB_ZERO) {
+    packet.fbNormalized = (fb - FB_ZERO) * 255 / (FB_MAX - FB_ZERO);
+  } else
+  if (fb < FB_ZERO) {
+    packet.fbNormalized = (FB_ZERO - fb) * 255 / (FB_ZERO - fb);
+  }
+  if (lr >= LR_ZERO) {
+    packet.lrNormalized = (lr - LR_ZERO) * 255 / (LR_MAX - LR_ZERO);
+  } else
+  if (lr < LR_ZERO) {
+    packet.lrNormalized = (LR_ZERO - lr) * 255 / (LR_ZERO - lr);
+  }
+  // TODO read horn and breaks buttons. For now, set them both to true - 1
+  packet.buttons = 0;
+  bitSet(packet.buttons, button_HORN);
+  bitSet(packet.buttons, button_BREAKS);
 }
