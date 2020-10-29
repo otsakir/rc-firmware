@@ -1,5 +1,7 @@
 #include "buttons.h"
 #include "periodictask.h"
+#include "rcprotocol.h"
+#include "rcarduino.h"
 
 
 #define FRONTBACK_PIN A0
@@ -7,32 +9,38 @@
 #define CALIBRATION_PIN 3
 
 // indexes of bit information in Packet.buttons 0-7
-#define button_HORN 0
-#define button_BREAKS 1
+#define bit_HORN 0
+#define bit_BREAKS 1
+#define bit_FORWARD 2 // going forward or backward
+#define bit_RIGHT 4 // turning left or right
 
-struct Packet {
-  unsigned char fbNormalized;
-  unsigned char lrNormalized;
-  unsigned char buttons;
 
-  Packet() {
-    fbNormalized = 0;
-    lrNormalized = 0;
-    buttons = 0;
-  }
-  
-};
+// --- GLOBAL VARIABLES --- */
 
-// flags
 bool CALIBRATING = false; // read-only value. should not be edited directly. Only through start/stopCalibration.
 bool TRANSMITTING = false;
+Packet packet;
+// BUTTON_PRESS means fires when button is actually released
+Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
+PeriodicTask transmitTask(1000, transmitTaskHandler);
 
-void readSensors(Packet& packet);
+// all settings below are in terms of actual values read from the analog port
+int FB_ZERO = 1024/2; // sensible defaults
+int LR_ZERO = 1024/2; // sensible defaults
+int FB_MAX,FB_MIN = FB_ZERO; 
+int LR_MAX, LR_MIN = LR_ZERO;
 
-void taskHandler(int dt) {
-  Serial.println("task executed!");
+
+/* --- H A N D L E R S --- */
+
+void transmitTaskHandler(int dt) {
+  if (TRANSMITTING) {
+    Serial.println("executing task!");
+    readSensors(packet);
+    transmitPacket(packet);
+  }
+  
 }
-
 
 void buttonCalibrateHandler(ButtonEvent event, Button& button) {
   Serial.println("button calibrate pressed");
@@ -44,15 +52,7 @@ void buttonCalibrateHandler(ButtonEvent event, Button& button) {
   }
 }
 
-// BUTTON_PRESS means fires when button is actually released
-Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
-PeriodicTask simpleTask(1000, taskHandler);
-
-// all settings below are in terms of actual values read from the analog port
-int FB_ZERO = 1024/2; // sensible defaults
-int LR_ZERO = 1024/2; // sensible defaults
-int FB_MAX,FB_MIN = FB_ZERO; 
-int LR_MAX, LR_MIN = LR_ZERO;
+/* ---  Arduino-specific stuff --- */
 
 void setup() {
   Serial.begin(9600);
@@ -62,6 +62,15 @@ void setup() {
   LR_ZERO = analogRead(LEFTRIGHT_PIN);  
   
 }
+
+void loop() {
+  buttonCalibrate.update();
+  if ( CALIBRATING )
+    calibrate();
+  transmitTask.check(millis());
+}
+
+/* --- Application code --- */
 
 void startCalibration() {
   stopTransmitting(); // make sure we're not transmitting
@@ -78,10 +87,12 @@ void stopCalibration() {
   CALIBRATING = false;
   Serial.println("stopped calibration");
   //dumpConfig();
+  // TODO maybe we should have an explicit command of the user to start transmission
+  startTransmitting();
 }
 
 void startTransmitting() {
-  
+  TRANSMITTING = true;
 }
 
 void stopTransmitting() {
@@ -109,39 +120,39 @@ void calibrate() {
   LR_MIN = lr < LR_MIN ? lr : LR_MIN;
 }
 
-Packet packet;
 
-void loop() {
-  // put your main code here, to run repeatedly:
-  readSensors(packet);
-  //Serial.print("frontback: "); Serial.print(FB); 
-  //Serial.print("leftright: "); Serial.print(LR);
-  //Serial.println();
-
-  buttonCalibrate.update();
-  simpleTask.check(millis());
-  if ( CALIBRATING )
-    calibrate();
+void transmitPacket(Packet& packet) {
+  Serial.print("fb: "); Serial.print(packet.fbNormalized); Serial.print(" - forward: "); Serial.println(bitRead(packet.bits,bit_FORWARD));
+  Serial.print("lr: "); Serial.print(packet.lrNormalized); Serial.print(" - right: "); Serial.println(bitRead(packet.bits,bit_RIGHT));
+  
+  
 }
 
 // reads sensor values and prepares outgoing packet
 void readSensors(Packet& packet) {
   long fb = analogRead(FRONTBACK_PIN);
-  long lr = analogRead(LEFTRIGHT_PIN);  
+  long lr = analogRead(LEFTRIGHT_PIN); 
+  Serial.print("raw fb:"); Serial.println(fb); 
+  Serial.print("raw lr:"); Serial.println(lr); 
+
+  packet.bits = 0;
   if (fb >= FB_ZERO) {
     packet.fbNormalized = (fb - FB_ZERO) * 255 / (FB_MAX - FB_ZERO);
+    bitSet(packet.bits, bit_FORWARD);
   } else
   if (fb < FB_ZERO) {
     packet.fbNormalized = (FB_ZERO - fb) * 255 / (FB_ZERO - fb);
+    bitClear(packet.bits, bit_FORWARD);
   }
   if (lr >= LR_ZERO) {
     packet.lrNormalized = (lr - LR_ZERO) * 255 / (LR_MAX - LR_ZERO);
+    bitSet(packet.bits, bit_RIGHT);
   } else
   if (lr < LR_ZERO) {
     packet.lrNormalized = (LR_ZERO - lr) * 255 / (LR_ZERO - lr);
+    bitClear(packet.bits, bit_RIGHT);
   }
-  // TODO read horn and breaks buttons. For now, set them both to true - 1
-  packet.buttons = 0;
-  bitSet(packet.buttons, button_HORN);
-  bitSet(packet.buttons, button_BREAKS);
+  // TODO read horn and breaks buttons. For now, set them both to true - 1  
+  bitSet(packet.bits, bit_HORN);
+  bitSet(packet.bits, bit_BREAKS); 
 }
