@@ -17,8 +17,9 @@ struct Packet {
   
 };
 
-//CRC-8 - based on the CRC8 formulas by Dallas/Maxim
-//code released under the therms of the GNU GPL 3.0 license
+// CRC-8 - based on the CRC8 formulas by Dallas/Maxim
+// code released under the therms of the GNU GPL 3.0 license
+// copied from: https://www.leonardomiliani.com/en/2013/un-semplice-crc8-per-arduino/
 byte CRC8(const byte *data, byte len) {
   byte crc = 0x00;
   while (len--) {

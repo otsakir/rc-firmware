@@ -22,6 +22,7 @@ bool TRANSMITTING = false;
 Packet packet;
 // BUTTON_PRESS means fires when button is actually released
 Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
+// transmit every 1000 msec
 PeriodicTask transmitTask(1000, transmitTaskHandler);
 
 // all settings below are in terms of actual values read from the analog port
@@ -64,9 +65,12 @@ void setup() {
 }
 
 void loop() {
+  // check if buttonCalibrate is pressed and trigger its handler if it is
   buttonCalibrate.update();
+  // update calibration limits FB_MAX, FB_MIN, LR_MAX, LR_MIN
   if ( CALIBRATING )
     calibrate();
+  // check if it's time to transmit the packet
   transmitTask.check(millis());
 }
 
