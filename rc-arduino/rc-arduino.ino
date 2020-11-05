@@ -130,8 +130,8 @@ void transmitPacket(Packet& packet) {
   byte crc = CRC8( (byte*)&packet, sizeof(packet));
   packet.crc = crc;
   
-  Serial.print("fb: "); Serial.print(packet.fbNormalized); Serial.print(" - forward: "); Serial.println(bitRead(packet.bits,bit_FORWARD));
-  Serial.print("lr: "); Serial.print(packet.lrNormalized); Serial.print(" - right: "); Serial.println(bitRead(packet.bits,bit_RIGHT));
+  //Serial.print("fb: "); Serial.print(packet.fbNormalized); Serial.print(" - forward: "); Serial.println(bitRead(packet.bits,bit_FORWARD));
+  //Serial.print("lr: "); Serial.print(packet.lrNormalized); Serial.print(" - right: "); Serial.println(bitRead(packet.bits,bit_RIGHT));
   Serial.print("CRC8: "); Serial.println(crc);
 }
 
@@ -139,27 +139,44 @@ void transmitPacket(Packet& packet) {
 void readSensors(Packet& packet) {
   long fb = analogRead(FRONTBACK_PIN);
   long lr = analogRead(LEFTRIGHT_PIN); 
-  Serial.print("raw fb:"); Serial.println(fb); 
-  Serial.print("raw lr:"); Serial.println(lr); 
 
   packet.bits = 0;
   if (fb >= FB_ZERO) {
-    packet.fbNormalized = (fb - FB_ZERO) * 255 / (FB_MAX - FB_ZERO);
+    if (fb > FB_MAX) {
+      error(ERROR_FB_TOO_HIGH);
+      FB_MAX = fb;
+    }
+    packet.fbNormalized = ((long)(fb - FB_ZERO)) * 255 / (FB_MAX - FB_ZERO);
     bitSet(packet.bits, bit_FORWARD);
   } else
   if (fb < FB_ZERO) {
-    packet.fbNormalized = (FB_ZERO - fb) * 255 / (FB_ZERO - fb);
+    if (fb < FB_MIN) {
+      error(ERROR_FB_TOO_LOW);
+      FB_MIN = fb;
+    }
+    packet.fbNormalized = ((long)(FB_ZERO - fb)) * 255 / (FB_ZERO - FB_MIN);
     bitClear(packet.bits, bit_FORWARD);
   }
   if (lr >= LR_ZERO) {
-    packet.lrNormalized = (lr - LR_ZERO) * 255 / (LR_MAX - LR_ZERO);
+    if (lr > LR_MAX) {
+      error(ERROR_LR_TOO_HIGH);
+      LR_MAX = lr;
+    }
+    packet.lrNormalized = ((long)(lr - LR_ZERO)) * 255 / (LR_MAX - LR_ZERO);
     bitSet(packet.bits, bit_RIGHT);
   } else
   if (lr < LR_ZERO) {
-    packet.lrNormalized = (LR_ZERO - lr) * 255 / (LR_ZERO - lr);
+    if (lr < LR_MIN) {
+      error(ERROR_LR_TOO_LOW);
+      LR_MIN = lr;
+    }
+    packet.lrNormalized = ((long)(LR_ZERO - lr)) * 255 / (LR_ZERO - LR_MIN);
     bitClear(packet.bits, bit_RIGHT);
   }
   // TODO read horn and breaks buttons. For now, set them both to true - 1  
   bitSet(packet.bits, bit_HORN);
   bitSet(packet.bits, bit_BREAKS); 
+
+  Serial.print("FB"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, bit_FORWARD) ? "  -->  " : "  <--  "  ); Serial.print(packet.fbNormalized); Serial.print("\t("); Serial.print(fb); Serial.println(")");
+  Serial.print("LR"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, bit_RIGHT) ? "  -->  " : "  <--  "  ); Serial.print(packet.lrNormalized); Serial.print("\t("); Serial.print(lr); Serial.println(")"); 
 }

@@ -1,6 +1,11 @@
 #ifndef _RCPROTOCOL_H_
 #define _RCPROTOCOL_H_
 
+// Error messages are defined here. In case we run out of memory we can use smaller error descriptions like "E_31" etc.
+#define ERROR_LR_TOO_LOW "found LR value out of LR_MIN limit. Pushing limit down"
+#define ERROR_LR_TOO_HIGH "found LR value out of LR_MAX limit. Pushing limit up"
+#define ERROR_FB_TOO_LOW "found FB value out of FB_MIN limit. Pushing limit down"
+#define ERROR_FB_TOO_HIGH "found FB value out of FB_MAX limit. Pushing limit up"
 
 struct Packet {
   unsigned char fbNormalized;
@@ -34,6 +39,10 @@ byte CRC8(const byte *data, byte len) {
     }
   }
   return crc;
+}
+
+void error(const char* msg) {
+  Serial.print("[ERROR] "); Serial.println(msg);
 }
 
 
