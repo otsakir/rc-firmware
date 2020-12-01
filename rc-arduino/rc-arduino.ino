@@ -3,6 +3,10 @@
 #include "rcprotocol.h"
 #include "rcarduino.h"
 
+// Receiver 
+#include "receiver.h"
+
+
 
 #define FRONTBACK_PIN A0
 #define LEFTRIGHT_PIN A1
@@ -23,7 +27,7 @@ Packet packet;
 // BUTTON_PRESS means fires when button is actually released
 Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
 // transmit every 1000 msec
-PeriodicTask transmitTask(1000, transmitTaskHandler);
+PeriodicTask transmitTask(10, transmitTaskHandler);
 
 // all settings below are in terms of actual values read from the analog port
 int FB_ZERO = 1024/2; // sensible defaults
@@ -36,9 +40,14 @@ int LR_MAX, LR_MIN = LR_ZERO;
 
 void transmitTaskHandler(int dt) {
   if (TRANSMITTING) {
-    Serial.println("executing task!");
+    //Serial.println("executing task!");
     readSensors(packet);
     transmitPacket(packet);
+
+    // RECEIVER
+    Packet received_packet;
+    receivePacket(received_packet);
+    processReceived(received_packet);
   }
   
 }
@@ -60,7 +69,10 @@ void setup() {
   pinMode(CALIBRATION_PIN, INPUT);
   // initialize zero position in both axis
   FB_ZERO = analogRead(FRONTBACK_PIN);
-  LR_ZERO = analogRead(LEFTRIGHT_PIN);  
+  LR_ZERO = analogRead(LEFTRIGHT_PIN); 
+
+  // FOR TESTING ONLY - receiver stuff
+  receiverSetup();
   
 }
 
@@ -132,7 +144,7 @@ void transmitPacket(Packet& packet) {
   
   //Serial.print("fb: "); Serial.print(packet.fbNormalized); Serial.print(" - forward: "); Serial.println(bitRead(packet.bits,bit_FORWARD));
   //Serial.print("lr: "); Serial.print(packet.lrNormalized); Serial.print(" - right: "); Serial.println(bitRead(packet.bits,bit_RIGHT));
-  Serial.print("CRC8: "); Serial.println(crc);
+  //Serial.print("CRC8: "); Serial.println(crc);
 }
 
 // reads sensor values and prepares outgoing packet
@@ -177,6 +189,40 @@ void readSensors(Packet& packet) {
   bitSet(packet.bits, bit_HORN);
   bitSet(packet.bits, bit_BREAKS); 
 
-  Serial.print("FB"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, bit_FORWARD) ? "  -->  " : "  <--  "  ); Serial.print(packet.fbNormalized); Serial.print("\t("); Serial.print(fb); Serial.println(")");
-  Serial.print("LR"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, bit_RIGHT) ? "  -->  " : "  <--  "  ); Serial.print(packet.lrNormalized); Serial.print("\t("); Serial.print(lr); Serial.println(")"); 
+  //Serial.print("FB"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, bit_FORWARD) ? "  -->  " : "  <--  "  ); Serial.print(packet.fbNormalized); Serial.print("\t("); Serial.print(fb); Serial.println(")");
+  //Serial.print("LR"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, bit_RIGHT) ? "  -->  " : "  <--  "  ); Serial.print(packet.lrNormalized); Serial.print("\t("); Serial.print(lr); Serial.println(")"); 
+}
+
+
+/* --- R E C E I V E R --- */
+
+
+/*
+ * Receives the packet from RF validates it and populates the packet structure
+ * 
+ * Memory handling for packet is done by outside layer. This function assumes
+ * it contains  garbage, clears it and populates it by reading data from RF.
+ * 
+ * For testing purposes, the receiver is implmented in the same file and device 
+ * with the sender. Thus, the function will read the packet from the global 
+ * variable
+ */
+void receivePacket(Packet& returned_packet) {
+  // TODO receive the packet
+  // ...
+  memcpy( &returned_packet, &packet, sizeof(Packet) );
+  //Serial.print("receivePacket:"); Serial.println(returned_packet.crc);
+}
+
+void processReceived(Packet& packet) {
+  //Serial.print("motor1 PWM"); Serial.println(packet.fbNormalized);
+  //Serial.print("motor2 PWM"); Serial.println(packet.lrNormalized);
+  // TODO!!!  convert fbNormalized, lrNormalized values to MOTOR1, MOTOR2 values
+  // ...
+  
+  analogWrite(MOTOR1_PIN, packet.fbNormalized);
+  analogWrite(MOTOR2_PIN, packet.lrNormalized);
+
+  digitalWrite(MOTOR1DIR_PIN, bitRead(packet.bits, bit_FORWARD) );
+  digitalWrite(MOTOR2DIR_PIN, bitRead(packet.bits, bit_RIGHT) );
 }
