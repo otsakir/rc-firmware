@@ -7,6 +7,14 @@
 #define ERROR_FB_TOO_LOW "found FB value out of FB_MIN limit. Pushing limit down"
 #define ERROR_FB_TOO_HIGH "found FB value out of FB_MAX limit. Pushing limit up"
 
+
+// indexes of bit information in Packet.buttons 0-7
+#define bit_HORN 0
+#define bit_BREAKS 1
+#define bit_FORWARD 2 // going forward or backward
+#define bit_RIGHT 4 // turning left or right
+
+
 struct Packet {
   unsigned char fbNormalized;
   unsigned char lrNormalized;

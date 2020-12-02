@@ -1,22 +1,10 @@
 #include "buttons.h"
 #include "periodictask.h"
 #include "rcprotocol.h"
-#include "rcarduino.h"
+#include "sender.h"
 
 // Receiver 
 #include "receiver.h"
-
-
-
-#define FRONTBACK_PIN A0
-#define LEFTRIGHT_PIN A1
-#define CALIBRATION_PIN 3
-
-// indexes of bit information in Packet.buttons 0-7
-#define bit_HORN 0
-#define bit_BREAKS 1
-#define bit_FORWARD 2 // going forward or backward
-#define bit_RIGHT 4 // turning left or right
 
 
 // --- GLOBAL VARIABLES --- */
@@ -27,7 +15,7 @@ Packet packet;
 // BUTTON_PRESS means fires when button is actually released
 Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
 // transmit every 1000 msec
-PeriodicTask transmitTask(10, transmitTaskHandler);
+PeriodicTask transmitTask(1000, transmitTaskHandler);
 
 // all settings below are in terms of actual values read from the analog port
 int FB_ZERO = 1024/2; // sensible defaults
@@ -42,6 +30,7 @@ void transmitTaskHandler(int dt) {
   if (TRANSMITTING) {
     //Serial.println("executing task!");
     readSensors(packet);
+    //applyZeroTolerance(packet);
     transmitPacket(packet);
 
     // RECEIVER
@@ -189,8 +178,16 @@ void readSensors(Packet& packet) {
   bitSet(packet.bits, bit_HORN);
   bitSet(packet.bits, bit_BREAKS); 
 
-  //Serial.print("FB"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, bit_FORWARD) ? "  -->  " : "  <--  "  ); Serial.print(packet.fbNormalized); Serial.print("\t("); Serial.print(fb); Serial.println(")");
-  //Serial.print("LR"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, bit_RIGHT) ? "  -->  " : "  <--  "  ); Serial.print(packet.lrNormalized); Serial.print("\t("); Serial.print(lr); Serial.println(")"); 
+  Serial.print("FB"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, bit_FORWARD) ? "  -->  " : "  <--  "  ); Serial.print(packet.fbNormalized); Serial.print("\t("); Serial.print(fb); Serial.println(")");
+  Serial.print("LR"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, bit_RIGHT) ? "  -->  " : "  <--  "  ); Serial.print(packet.lrNormalized); Serial.print("\t("); Serial.print(lr); Serial.println(")"); 
+  Serial.println();
+}
+
+void applyZeroTolerance(Packet& packet) {
+  if (packet.fbNormalized < ZERO_THRESHOLD) 
+    packet.fbNormalized = 0;
+  if (packet.lrNormalized < ZERO_THRESHOLD)
+    packet.lrNormalized = 0;
 }
 
 
