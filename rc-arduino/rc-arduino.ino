@@ -11,11 +11,12 @@
 
 bool CALIBRATING = false; // read-only value. should not be edited directly. Only through start/stopCalibration.
 bool TRANSMITTING = false;
+SensorData sensorData;
 Packet packet;
 // BUTTON_PRESS means fires when button is actually released
 Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
 // transmit every 1000 msec
-PeriodicTask transmitTask(1000, transmitTaskHandler);
+PeriodicTask transmitTask(10, transmitTaskHandler);
 
 // all settings below are in terms of actual values read from the analog port
 int FB_ZERO = 1024/2; // sensible defaults
@@ -28,9 +29,9 @@ int LR_MAX, LR_MIN = LR_ZERO;
 
 void transmitTaskHandler(int dt) {
   if (TRANSMITTING) {
-    //Serial.println("executing task!");
-    readSensors(packet);
-    //applyZeroTolerance(packet);
+    readSensors(sensorData);
+    applyZeroTolerance(sensorData);
+    buildPacket(sensorData, packet); // copy sensor values gathered in sensor-data variable to outgoing packet structure
     transmitPacket(packet);
 
     // RECEIVER
@@ -126,6 +127,60 @@ void calibrate() {
 }
 
 
+void buildPacket(SensorData& sensorData, Packet& packet) {
+  if (sensorData.fbNormalized == 0) {
+    // no throttle at all
+    packet.motor1 = 0;
+    packet.motor2 = 0;
+  } else if (sensorData.lrNormalized == 0) {
+    // if no left-right , both motors have the same throttle
+    packet.motor1 = (unsigned char) sensorData.fbNormalized;
+    packet.motor2 = (unsigned char) sensorData.fbNormalized;
+  } else {
+    // we have a LR reading
+    int motor1 = sensorData.fbNormalized; // start from that and add/sub accordingly
+    int motor2 = sensorData.fbNormalized; 
+
+    int offset = (int) (((float)sensorData.lrNormalized) * TURN_FACTOR);
+    if (sensorbit_FORWARD) {  
+      if ( bitRead(sensorData.bits, sensorbit_RIGHT) ) {
+  .     motor1 += offset;
+        motor2 -= offset;
+      } else {
+        motor1 -= offset;
+        motor2 += offset;
+      }
+    } else {
+      // moving backwards. Invert offset operation
+      if ( ! bitRead(sensorData.bits, sensorbit_RIGHT) ) {
+  .     motor1 += offset;
+        motor2 -= offset;
+      } else {
+        motor1 -= offset;
+        motor2 += offset;
+      }
+    }
+    // TODO.the above two branches can be merged with a bitwise operation in the conditional.We can merge them if we need to optimize memory
+    
+    // now apply thresholds
+    if (motor1 < 0) {
+      motor1 = -motor1;
+      
+      motor1 = 0;
+    }
+    if (motor2 < 0)
+      motor2 = 0;
+    if (motor1 > 255)
+      motor1 = 255;
+    if (motor2 > 255)
+      motor2 = 255;
+
+    packet.motor1 = motor1;
+    packet.motor2 = motor2;
+    
+  }
+}
+
 void transmitPacket(Packet& packet) {
   packet.crc = 0; // reseting this since it should not be taken into account when calculating CRC. 
   byte crc = CRC8( (byte*)&packet, sizeof(packet));
@@ -136,8 +191,8 @@ void transmitPacket(Packet& packet) {
   //Serial.print("CRC8: "); Serial.println(crc);
 }
 
-// reads sensor values and prepares outgoing packet
-void readSensors(Packet& packet) {
+// reads sensor values and bundle then in SensorData
+void readSensors(SensorData& packet) {
   long fb = analogRead(FRONTBACK_PIN);
   long lr = analogRead(LEFTRIGHT_PIN); 
 
@@ -148,7 +203,7 @@ void readSensors(Packet& packet) {
       FB_MAX = fb;
     }
     packet.fbNormalized = ((long)(fb - FB_ZERO)) * 255 / (FB_MAX - FB_ZERO);
-    bitSet(packet.bits, bit_FORWARD);
+    bitSet(packet.bits, sensorbit_FORWARD);
   } else
   if (fb < FB_ZERO) {
     if (fb < FB_MIN) {
@@ -156,7 +211,7 @@ void readSensors(Packet& packet) {
       FB_MIN = fb;
     }
     packet.fbNormalized = ((long)(FB_ZERO - fb)) * 255 / (FB_ZERO - FB_MIN);
-    bitClear(packet.bits, bit_FORWARD);
+    bitClear(packet.bits, sensorbit_FORWARD);
   }
   if (lr >= LR_ZERO) {
     if (lr > LR_MAX) {
@@ -164,7 +219,7 @@ void readSensors(Packet& packet) {
       LR_MAX = lr;
     }
     packet.lrNormalized = ((long)(lr - LR_ZERO)) * 255 / (LR_MAX - LR_ZERO);
-    bitSet(packet.bits, bit_RIGHT);
+    bitSet(packet.bits, sensorbit_RIGHT);
   } else
   if (lr < LR_ZERO) {
     if (lr < LR_MIN) {
@@ -172,18 +227,18 @@ void readSensors(Packet& packet) {
       LR_MIN = lr;
     }
     packet.lrNormalized = ((long)(LR_ZERO - lr)) * 255 / (LR_ZERO - LR_MIN);
-    bitClear(packet.bits, bit_RIGHT);
+    bitClear(packet.bits, sensorbit_RIGHT);
   }
   // TODO read horn and breaks buttons. For now, set them both to true - 1  
-  bitSet(packet.bits, bit_HORN);
-  bitSet(packet.bits, bit_BREAKS); 
+  bitSet(packet.bits, sensorbit_HORN);
+  bitSet(packet.bits, sensorbit_BREAKS); 
 
-  Serial.print("FB"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, bit_FORWARD) ? "  -->  " : "  <--  "  ); Serial.print(packet.fbNormalized); Serial.print("\t("); Serial.print(fb); Serial.println(")");
-  Serial.print("LR"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, bit_RIGHT) ? "  -->  " : "  <--  "  ); Serial.print(packet.lrNormalized); Serial.print("\t("); Serial.print(lr); Serial.println(")"); 
+  Serial.print("FB"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, sensorbit_FORWARD) ? "  -->  " : "  <--  "  ); Serial.print(packet.fbNormalized); Serial.print("\t("); Serial.print(fb); Serial.println(")");
+  Serial.print("LR"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, sensorbit_RIGHT) ? "  -->  " : "  <--  "  ); Serial.print(packet.lrNormalized); Serial.print("\t("); Serial.print(lr); Serial.println(")"); 
   Serial.println();
 }
 
-void applyZeroTolerance(Packet& packet) {
+void applyZeroTolerance(SensorData& packet) {
   if (packet.fbNormalized < ZERO_THRESHOLD) 
     packet.fbNormalized = 0;
   if (packet.lrNormalized < ZERO_THRESHOLD)

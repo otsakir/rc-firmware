@@ -9,21 +9,21 @@
 
 
 // indexes of bit information in Packet.buttons 0-7
-#define bit_HORN 0
-#define bit_BREAKS 1
-#define bit_FORWARD 2 // going forward or backward
-#define bit_RIGHT 4 // turning left or right
+#define packetbit_HORN 0
+#define packetbit_BREAKS 1
+#define packetbit_MOTOR1 2  // left one 
+#define packetbit_MOTOR2 4  // right one
 
 
 struct Packet {
-  unsigned char fbNormalized;
-  unsigned char lrNormalized;
+  unsigned char motor1; // left motor (as we move forward)
+  unsigned char motor2; // right motor
   unsigned char bits;
   byte crc;
 
   Packet() {
-    fbNormalized = 0;
-    lrNormalized = 0;
+    motor1 = 0;
+    motor2 = 0;
     bits = 0;
     byte crc = 0; // CAUTION: this should be 0 when packet CRC is calculated. Add it to the packet _after_ the calculation
   }
