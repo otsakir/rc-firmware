@@ -16,7 +16,7 @@ Packet packet;
 // BUTTON_PRESS means fires when button is actually released
 Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
 // transmit every 1000 msec
-PeriodicTask transmitTask(10, transmitTaskHandler);
+PeriodicTask transmitTask(1000, transmitTaskHandler);
 
 // all settings below are in terms of actual values read from the analog port
 int FB_ZERO = 1024/2; // sensible defaults
@@ -144,7 +144,7 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
     int offset = (int) (((float)sensorData.lrNormalized) * TURN_FACTOR);
     if (sensorbit_FORWARD) {  
       if ( bitRead(sensorData.bits, sensorbit_RIGHT) ) {
-  .     motor1 += offset;
+        motor1 += offset;
         motor2 -= offset;
       } else {
         motor1 -= offset;
@@ -153,7 +153,7 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
     } else {
       // moving backwards. Invert offset operation
       if ( ! bitRead(sensorData.bits, sensorbit_RIGHT) ) {
-  .     motor1 += offset;
+        motor1 += offset;
         motor2 -= offset;
       } else {
         motor1 -= offset;
@@ -179,6 +179,11 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
     packet.motor2 = motor2;
     
   }
+
+  Serial.print("fb: "); Serial.print(sensorData.fbNormalized); Serial.print("\tlr: "); Serial.print(sensorData.lrNormalized); Serial.println();
+  Serial.print("motor1: "); Serial.print(packet.motor1);
+  Serial.print("\tmotor2: "); Serial.print(packet.motor2); Serial.println("\n");
+  
 }
 
 void transmitPacket(Packet& packet) {
@@ -272,9 +277,9 @@ void processReceived(Packet& packet) {
   // TODO!!!  convert fbNormalized, lrNormalized values to MOTOR1, MOTOR2 values
   // ...
   
-  analogWrite(MOTOR1_PIN, packet.fbNormalized);
-  analogWrite(MOTOR2_PIN, packet.lrNormalized);
+  analogWrite(MOTOR1_PIN, packet.motor1);
+  analogWrite(MOTOR2_PIN, packet.motor2);
 
-  digitalWrite(MOTOR1DIR_PIN, bitRead(packet.bits, bit_FORWARD) );
-  digitalWrite(MOTOR2DIR_PIN, bitRead(packet.bits, bit_RIGHT) );
+  digitalWrite(MOTOR1DIR_PIN, bitRead(packet.bits, packetbit_MOTOR1) );
+  digitalWrite(MOTOR2DIR_PIN, bitRead(packet.bits, packetbit_MOTOR2) );
 }
