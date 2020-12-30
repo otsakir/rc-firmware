@@ -16,7 +16,7 @@ Packet packet;
 // BUTTON_PRESS means fires when button is actually released
 Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
 // transmit every 1000 msec
-PeriodicTask transmitTask(1000, transmitTaskHandler);
+PeriodicTask transmitTask(10, transmitTaskHandler);
 
 // all settings below are in terms of actual values read from the analog port
 int FB_ZERO = 1024/2; // sensible defaults
@@ -128,17 +128,14 @@ void calibrate() {
 
 
 void buildPacket(SensorData& sensorData, Packet& packet) {
-  if (sensorData.fbNormalized == 0) {
-    // no throttle at all
-    packet.motor1 = 0;
-    packet.motor2 = 0;
-  } else if (sensorData.lrNormalized == 0) {
+  packet.reset();
+  if (sensorData.lrNormalized == 0) {
     // if no left-right , both motors have the same throttle
     packet.motor1 = (unsigned char) sensorData.fbNormalized;
     packet.motor2 = (unsigned char) sensorData.fbNormalized;
   } else {
     // we have a LR reading
-    int motor1 = sensorData.fbNormalized; // start from that and add/sub accordingly
+    int motor1 = sensorData.fbNormalized; // start from that and add/sub accordingly. This also covers the case where fbNormalized == 0
     int motor2 = sensorData.fbNormalized; 
 
     int offset = (int) (((float)sensorData.lrNormalized) * TURN_FACTOR);
@@ -165,11 +162,14 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
     // now apply thresholds
     if (motor1 < 0) {
       motor1 = -motor1;
-      
-      motor1 = 0;
+      bitSet(packet.bits, packetbit_MOTOR1);
+      //     motor1 = 0;
     }
-    if (motor2 < 0)
-      motor2 = 0;
+    if (motor2 < 0) {
+      motor2 = -motor2;
+      bitSet(packet.bits, packetbit_MOTOR2);
+      // motor2 = 0;
+    }
     if (motor1 > 255)
       motor1 = 255;
     if (motor2 > 255)
@@ -181,8 +181,8 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
   }
 
   Serial.print("fb: "); Serial.print(sensorData.fbNormalized); Serial.print("\tlr: "); Serial.print(sensorData.lrNormalized); Serial.println();
-  Serial.print("motor1: "); Serial.print(packet.motor1);
-  Serial.print("\tmotor2: "); Serial.print(packet.motor2); Serial.println("\n");
+  Serial.print("motor1: "); Serial.print(packet.motor1); Serial.print("\t direction: "); Serial.print(bitRead(packet.bits, packetbit_MOTOR1)); Serial.println();
+  Serial.print("motor2: "); Serial.print(packet.motor2); Serial.print("\t direction: "); Serial.print(bitRead(packet.bits, packetbit_MOTOR2)); Serial.println("\n");
   
 }
 

@@ -11,7 +11,7 @@
 // indexes of bit information in Packet.buttons 0-7
 #define packetbit_HORN 0
 #define packetbit_BREAKS 1
-#define packetbit_MOTOR1 2  // left one 
+#define packetbit_MOTOR1 2  // left one .Reverse motor 1 direction.
 #define packetbit_MOTOR2 4  // right one
 
 
@@ -22,6 +22,10 @@ struct Packet {
   byte crc;
 
   Packet() {
+    reset();
+  }
+
+  void reset() {
     motor1 = 0;
     motor2 = 0;
     bits = 0;
