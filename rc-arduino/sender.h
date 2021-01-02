@@ -16,23 +16,7 @@
 #define sensorbit_RIGHT 4 // turning left or right
 
 
-struct SensorData {
-  unsigned short fbNormalized;
-  unsigned short lrNormalized;
-  unsigned char bits;
 
-  SensorData() {
-    fbNormalized = 0;
-    lrNormalized = 0;
-    bits = 0;
-  }  
-};
-
-
-// forward declaration for remote-control arduino application 
-
-void buttonCalibrateHandler(ButtonEvent event, Button& button);
-void transmitTaskHandler(int dt);
 
 
 
