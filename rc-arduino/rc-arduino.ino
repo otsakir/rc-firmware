@@ -2,7 +2,6 @@
 #include "periodictask.h"
 #include "rcprotocol.h"
 #include "sender.h"
-#include "sender_core.h"
 
 // Receiver 
 #include "receiver.h"
@@ -16,10 +15,6 @@ void transmitTaskHandler(int dt);
 
 // --- GLOBAL VARIABLES --- */
 
-bool CALIBRATING = false; // read-only value. should not be edited directly. Only through start/stopCalibration.
-bool TRANSMITTING = false;
-SensorData sensorData;
-Packet packet;
 // BUTTON_PRESS means fires when button is actually released
 Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
 // transmit every 1000 msec
@@ -29,11 +24,11 @@ PeriodicTask transmitTask(10, transmitTaskHandler);
 /* --- H A N D L E R S --- */
 
 void transmitTaskHandler(int dt) {
-  if (TRANSMITTING) {
-    readSensors(sensorData);
-    applyZeroTolerance(sensorData);
-    buildPacket(sensorData, packet); // copy sensor values gathered in sensor-data variable to outgoing packet structure
-    transmitPacket(packet);
+  if (senderContext.TRANSMITTING) {
+    readSensors(senderContext.sensorData);
+    applyZeroTolerance(senderContext.sensorData);
+    buildPacket(senderContext.sensorData, senderContext.packet); // copy sensor values gathered in sensor-data variable to outgoing packet structure
+    transmitPacket(senderContext.packet);
 
     // RECEIVER
     Packet received_packet;
@@ -45,7 +40,7 @@ void transmitTaskHandler(int dt) {
 
 void buttonCalibrateHandler(ButtonEvent event, Button& button) {
   Serial.println("button calibrate pressed");
-  if ( !CALIBRATING )
+  if ( !senderContext.CALIBRATING )
     startCalibration();
   else {
     stopCalibration();
@@ -59,8 +54,8 @@ void setup() {
   Serial.begin(9600);
   pinMode(CALIBRATION_PIN, INPUT);
   // initialize zero position in both axis
-  FB_ZERO = analogRead(FRONTBACK_PIN);
-  LR_ZERO = analogRead(LEFTRIGHT_PIN); 
+  senderContext.FB_ZERO = analogRead(FRONTBACK_PIN);
+  senderContext.LR_ZERO = analogRead(LEFTRIGHT_PIN); 
 
   // FOR TESTING ONLY - receiver stuff
   receiverSetup();
@@ -71,7 +66,7 @@ void loop() {
   // check if buttonCalibrate is pressed and trigger its handler if it is
   buttonCalibrate.update();
   // update calibration limits FB_MAX, FB_MIN, LR_MAX, LR_MIN
-  if ( CALIBRATING )
+  if ( senderContext.CALIBRATING )
     calibrate();
   // check if it's time to transmit the packet
   transmitTask.check(millis());
@@ -82,16 +77,16 @@ void loop() {
 void startCalibration() {
   stopTransmitting(); // make sure we're not transmitting
   Serial.println("started calibration");
-  CALIBRATING = true;
+  senderContext.CALIBRATING = true;
 
-  FB_ZERO = analogRead(FRONTBACK_PIN);
-  LR_ZERO = analogRead(LEFTRIGHT_PIN);   
-  int FB_MAX,FB_MIN = FB_ZERO; 
-  int LR_MAX, LR_MIN = LR_ZERO;
+  senderContext.FB_ZERO = analogRead(FRONTBACK_PIN);
+  senderContext.LR_ZERO = analogRead(LEFTRIGHT_PIN);   
+  //int FB_MAX,FB_MIN = FB_ZERO;  // TODO : what wasthis ?
+  //int LR_MAX, LR_MIN = LR_ZERO;
 }
 
 void stopCalibration() {
-  CALIBRATING = false;
+  senderContext.CALIBRATING = false;
   Serial.println("stopped calibration");
   //dumpConfig();
   // TODO maybe we should have an explicit command of the user to start transmission
@@ -99,21 +94,20 @@ void stopCalibration() {
 }
 
 void startTransmitting() {
-  TRANSMITTING = true;
+  senderContext.TRANSMITTING = true;
 }
 
 void stopTransmitting() {
-  TRANSMITTING = false;
-  
+  senderContext.TRANSMITTING = false;
 }
 
 void dumpConfig() {
-  Serial.print("FB_ZERO: "); Serial.println(FB_ZERO);
-  Serial.print("LR_ZERO: "); Serial.println(LR_ZERO);
-  Serial.print("LR_MAX: "); Serial.println(LR_MAX);
-  Serial.print("LR_MIN: "); Serial.println(LR_MIN);
-  Serial.print("FB_MAX: "); Serial.println(FB_MAX);
-  Serial.print("FB_MIN: "); Serial.println(FB_MIN);
+  Serial.print("FB_ZERO: "); Serial.println(senderContext.FB_ZERO);
+  Serial.print("LR_ZERO: "); Serial.println(senderContext.LR_ZERO);
+  Serial.print("LR_MAX: "); Serial.println(senderContext.LR_MAX);
+  Serial.print("LR_MIN: "); Serial.println(senderContext.LR_MIN);
+  Serial.print("FB_MAX: "); Serial.println(senderContext.FB_MAX);
+  Serial.print("FB_MIN: "); Serial.println(senderContext.FB_MIN);
 
 }
 
@@ -121,10 +115,10 @@ void dumpConfig() {
 void calibrate() {
   int fb = analogRead(FRONTBACK_PIN);
   int lr = analogRead(LEFTRIGHT_PIN);  
-  FB_MAX = fb > FB_MAX ? fb : FB_MAX;
-  FB_MIN = fb < FB_MIN ? fb : FB_MIN;
-  LR_MAX = lr > LR_MAX ? lr : LR_MAX;
-  LR_MIN = lr < LR_MIN ? lr : LR_MIN;
+  senderContext.FB_MAX = fb > senderContext.FB_MAX ? fb : senderContext.FB_MAX;
+  senderContext.FB_MIN = fb < senderContext.FB_MIN ? fb : senderContext.FB_MIN;
+  senderContext.LR_MAX = lr > senderContext.LR_MAX ? lr : senderContext.LR_MAX;
+  senderContext.LR_MIN = lr < senderContext.LR_MIN ? lr : senderContext.LR_MIN;
 }
 
 
@@ -139,13 +133,6 @@ void transmitPacket(Packet& packet) {
   //Serial.print("CRC8: "); Serial.println(crc);
 }
 
-
-void applyZeroTolerance(SensorData& packet) {
-  if (packet.fbNormalized < ZERO_THRESHOLD) 
-    packet.fbNormalized = 0;
-  if (packet.lrNormalized < ZERO_THRESHOLD)
-    packet.lrNormalized = 0;
-}
 
 
 /* --- R E C E I V E R --- */
@@ -164,7 +151,7 @@ void applyZeroTolerance(SensorData& packet) {
 void receivePacket(Packet& returned_packet) {
   // TODO receive the packet
   // ...
-  memcpy( &returned_packet, &packet, sizeof(Packet) );
+  memcpy( &returned_packet, &(senderContext.packet), sizeof(Packet) );
   //Serial.print("receivePacket:"); Serial.println(returned_packet.crc);
 }
 

@@ -1,3 +1,4 @@
+#include <iostream>
 
 #define A0 0
 #define A1 1
@@ -24,17 +25,19 @@ struct SerialClass {
     }
 
     void print(const char* s) {
-
+        std::cout << s;
     }
 
-    void print(int) {
-
+    void print(int n) {
+        std::cout << n;
     }
 
     void println(const char* s) {
+        std::cout << s << std::endl;
     }
 
     void println() {
+        std::cout << std::endl;
     }
 
 } Serial;
