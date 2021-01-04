@@ -107,6 +107,11 @@ void applyZeroTolerance(SensorData& packet) {
  */
 void buildPacket(SensorData& sensorData, Packet& packet) {
   packet.reset();
+  bool backward = bitRead(sensorData.bits, sensorbit_BACKWARD);
+  bool left = bitRead(sensorData.bits, sensorbit_LEFT);
+  bool motor1dir = backward;
+  bool motor2dir = backward;
+  
   if (sensorData.lrNormalized == 0) {
     // if no left-right , both motors have the same throttle
     packet.motor1 = (unsigned char) sensorData.fbNormalized;
@@ -115,10 +120,6 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
     // we have a LR reading
     int motor1 = sensorData.fbNormalized; // start from that and add/sub accordingly. This also covers the case where fbNormalized == 0
     int motor2 = sensorData.fbNormalized; 
-    bool backward = bitRead(sensorData.bits, sensorbit_BACKWARD);
-    bool left = bitRead(sensorData.bits, sensorbit_LEFT);
-    bool motor1dir = backward;
-    bool motor2dir = backward;
 
     int offset = (int) (((float)sensorData.lrNormalized) * TURN_FACTOR);
     if (! backward ) {  // if forward
@@ -157,11 +158,11 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
     }
 
     // populate outgoing packet
-    bitWrite(packet.bits, packetbit_MOTOR1, motor1dir);
-    bitWrite(packet.bits, packetbit_MOTOR2, motor2dir);
     packet.motor1 = motor1;
     packet.motor2 = motor2;
   }
+  bitWrite(packet.bits, packetbit_MOTOR1, motor1dir);
+  bitWrite(packet.bits, packetbit_MOTOR2, motor2dir);
 
   Serial.print("fb: "); Serial.print(sensorData.fbNormalized); Serial.print("\tlr: "); Serial.print(sensorData.lrNormalized); Serial.println();
   Serial.print("motor1: "); Serial.print(packet.motor1); Serial.print("\t direction: "); Serial.print(bitRead(packet.bits, packetbit_MOTOR1)); Serial.println();

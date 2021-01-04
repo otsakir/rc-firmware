@@ -163,4 +163,13 @@ CPUNIT_GTEST(integrated_parseSensors_to_Packet) {
     assert_equals("packet.motor2", 30, int(packet.motor2));
     assert_equals("packet.bits", 0b0000, int(packet.bits));
 
+    // Moving backward
+    A0_values.push(512 - 100 ); 
+    A1_values.push(512 );
+    readSensors(sensorData);
+    applyZeroTolerance(sensorData);
+    buildPacket(sensorData, packet);
+    assert_equals("packet.motor1", 49, int(packet.motor1));
+    assert_equals("packet.motor2", 49, int(packet.motor2));
+    assert_equals("packet.bits", 0b1100, int(packet.bits));
 }
