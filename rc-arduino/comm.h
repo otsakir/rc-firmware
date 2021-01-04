@@ -1,6 +1,13 @@
 #ifndef _RCPROTOCOL_H_
 #define _RCPROTOCOL_H_
 
+/*
+ * Communication stuff
+ * 
+ * Functionality placed here will be used by both the sender and receiver
+ * 
+ */
+
 // Error messages are defined here. In case we run out of memory we can use smaller error descriptions like "E_31" etc.
 #define ERROR_LR_TOO_LOW "found LR value out of LR_MIN limit. Pushing limit down"
 #define ERROR_LR_TOO_HIGH "found LR value out of LR_MAX limit. Pushing limit up"
@@ -12,7 +19,7 @@
 #define packetbit_HORN 0
 #define packetbit_BREAKS 1
 #define packetbit_MOTOR1 2  // left one .Reverse motor 1 direction.
-#define packetbit_MOTOR2 4  // right one
+#define packetbit_MOTOR2 3  // right one
 
 
 struct Packet {

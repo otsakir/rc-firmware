@@ -12,8 +12,8 @@
 // indexes of bit information in SensorData 
 #define sensorbit_HORN 0
 #define sensorbit_BREAKS 1
-#define sensorbit_FORWARD 2 // going forward or backward
-#define sensorbit_RIGHT 3 // turning left or right
+#define sensorbit_BACKWARD 2 // zero is forward, 1 is backward
+#define sensorbit_LEFT 3 // zero is right, 1 is left. These bits work as a reverse operation. Positive is FW/RIGHT
 
 // all settings below are in terms of actual values read from the analog port
 
@@ -58,7 +58,7 @@ void readSensors(SensorData& packet) {
       senderContext.FB_MAX = fb;
     }
     packet.fbNormalized = ((long)(fb - senderContext.FB_ZERO)) * 255 / (senderContext.FB_MAX - senderContext.FB_ZERO);
-    bitSet(packet.bits, sensorbit_FORWARD);
+    bitClear(packet.bits, sensorbit_BACKWARD);
   } else
   if (fb < senderContext.FB_ZERO) {
     if (fb < senderContext.FB_MIN) {
@@ -66,7 +66,7 @@ void readSensors(SensorData& packet) {
       senderContext.FB_MIN = fb;
     }
     packet.fbNormalized = ((long)(senderContext.FB_ZERO - fb)) * 255 / (senderContext.FB_ZERO - senderContext.FB_MIN);
-    bitClear(packet.bits, sensorbit_FORWARD);
+    bitSet(packet.bits, sensorbit_BACKWARD);
   }
   if (lr >= senderContext.LR_ZERO) {
     if (lr > senderContext.LR_MAX) {
@@ -74,7 +74,7 @@ void readSensors(SensorData& packet) {
       senderContext.LR_MAX = lr;
     }
     packet.lrNormalized = ((long)(lr - senderContext.LR_ZERO)) * 255 / (senderContext.LR_MAX - senderContext.LR_ZERO);
-    bitSet(packet.bits, sensorbit_RIGHT);
+    bitClear(packet.bits, sensorbit_LEFT);
   } else
   if (lr < senderContext.LR_ZERO) {
     if (lr < senderContext.LR_MIN) {
@@ -82,14 +82,14 @@ void readSensors(SensorData& packet) {
       senderContext.LR_MIN = lr;
     }
     packet.lrNormalized = ((long)(senderContext.LR_ZERO - lr)) * 255 / (senderContext.LR_ZERO - senderContext.LR_MIN);
-    bitClear(packet.bits, sensorbit_RIGHT);
+    bitSet(packet.bits, sensorbit_LEFT);
   }
   // TODO read horn and breaks buttons. For now, set them both to true - 1  
   bitSet(packet.bits, sensorbit_HORN);
   bitSet(packet.bits, sensorbit_BREAKS); 
 
-  Serial.print("FB"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, sensorbit_FORWARD) ? "  -->  " : "  <--  "  ); Serial.print(packet.fbNormalized); Serial.print("\t("); Serial.print(fb); Serial.println(")");
-  Serial.print("LR"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, sensorbit_RIGHT) ? "  -->  " : "  <--  "  ); Serial.print(packet.lrNormalized); Serial.print("\t("); Serial.print(lr); Serial.println(")"); 
+  Serial.print("FB"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, sensorbit_BACKWARD) ? "  v  " : "  ^  "  ); Serial.print(packet.fbNormalized); Serial.print("\t("); Serial.print(fb); Serial.println(")");
+  Serial.print("LR"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, sensorbit_LEFT) ? "  <  " : "  >  "  ); Serial.print(packet.lrNormalized); Serial.print("\t("); Serial.print(lr); Serial.println(")"); 
   Serial.println();
 }
 
@@ -101,6 +101,10 @@ void applyZeroTolerance(SensorData& packet) {
 }
 
 
+/*
+ * GLOBALS  : No global access
+ * 
+ */
 void buildPacket(SensorData& sensorData, Packet& packet) {
   packet.reset();
   if (sensorData.lrNormalized == 0) {
@@ -111,19 +115,23 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
     // we have a LR reading
     int motor1 = sensorData.fbNormalized; // start from that and add/sub accordingly. This also covers the case where fbNormalized == 0
     int motor2 = sensorData.fbNormalized; 
+    bool backward = bitRead(sensorData.bits, sensorbit_BACKWARD);
+    bool left = bitRead(sensorData.bits, sensorbit_LEFT);
+    bool motor1dir = backward;
+    bool motor2dir = backward;
 
     int offset = (int) (((float)sensorData.lrNormalized) * TURN_FACTOR);
-    if (sensorbit_FORWARD) {  
-      if ( bitRead(sensorData.bits, sensorbit_RIGHT) ) {
+    if (! backward ) {  // if forward
+      if ( !left ) { // if right
         motor1 += offset;
         motor2 -= offset;
-      } else {
+      } else { // if left
         motor1 -= offset;
         motor2 += offset;
       }
     } else {
       // moving backwards. Invert offset operation
-      if ( ! bitRead(sensorData.bits, sensorbit_RIGHT) ) {
+      if ( ! left ) { //if right
         motor1 += offset;
         motor2 -= offset;
       } else {
@@ -132,26 +140,27 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
       }
     }
     // TODO.the above two branches can be merged with a bitwise operation in the conditional.We can merge them if we need to optimize memory
-    
+
     // now apply thresholds
-    if (motor1 < 0) {
-      motor1 = -motor1;
-      bitSet(packet.bits, packetbit_MOTOR1);
-      //     motor1 = 0;
-    }
-    if (motor2 < 0) {
-      motor2 = -motor2;
-      bitSet(packet.bits, packetbit_MOTOR2);
-      // motor2 = 0;
-    }
     if (motor1 > 255)
       motor1 = 255;
     if (motor2 > 255)
       motor2 = 255;
+    // see if we need to invert motor direction
+    if (motor1 < 0) {
+      motor1 = -motor1;
+      motor1dir = !motor1dir;
+    }
+    if (motor2 < 0) {
+      motor2 = -motor2;
+      motor2dir = !motor2dir;
+    }
 
+    // populate outgoing packet
+    bitWrite(packet.bits, packetbit_MOTOR1, motor1dir);
+    bitWrite(packet.bits, packetbit_MOTOR2, motor2dir);
     packet.motor1 = motor1;
     packet.motor2 = motor2;
-    
   }
 
   Serial.print("fb: "); Serial.print(sensorData.fbNormalized); Serial.print("\tlr: "); Serial.print(sensorData.lrNormalized); Serial.println();

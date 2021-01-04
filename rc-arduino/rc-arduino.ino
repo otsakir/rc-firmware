@@ -1,6 +1,6 @@
 #include "buttons.h"
 #include "periodictask.h"
-#include "rcprotocol.h"
+#include "comm.h"
 #include "sender.h"
 
 // Receiver 

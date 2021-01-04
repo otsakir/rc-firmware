@@ -18,6 +18,13 @@ int bitRead(unsigned char& bits, byte index) {
     return (bits >> index) & 1;
 }
 
+void bitWrite(unsigned char& bits, byte index, bool value) {
+    if (value)
+        bitSet(bits, index);
+    else
+        bitClear(bits, index);
+}
+
 struct SerialClass {
 
     SerialClass() {
