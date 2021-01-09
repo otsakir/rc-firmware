@@ -94,10 +94,14 @@ void readSensors(SensorData& packet) {
 }
 
 void applyZeroTolerance(SensorData& packet) {
-  if (packet.fbNormalized < ZERO_THRESHOLD) 
+  if (packet.fbNormalized < ZERO_THRESHOLD) {
     packet.fbNormalized = 0;
-  if (packet.lrNormalized < ZERO_THRESHOLD)
+    bitClear(packet.bits, sensorbit_BACKWARD); 
+  }
+  if (packet.lrNormalized < ZERO_THRESHOLD) {
     packet.lrNormalized = 0;
+    bitClear(packet.bits, sensorbit_LEFT);
+  }
 }
 
 

@@ -88,7 +88,7 @@ void startCalibration() {
 void stopCalibration() {
   senderContext.CALIBRATING = false;
   Serial.println("stopped calibration");
-  //dumpConfig();
+  dumpConfig();
   // TODO maybe we should have an explicit command of the user to start transmission
   startTransmitting();
 }
