@@ -3,6 +3,10 @@
 #include "comm.h"
 #include "sender.h"
 
+#include <SoftwareSerial.h>
+
+SoftwareSerial mySerial(4,2);
+
 // Receiver 
 #include "receiver.h"
 
@@ -19,6 +23,12 @@ void transmitTaskHandler(int dt);
 Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
 // transmit every 1000 msec
 PeriodicTask transmitTask(10, transmitTaskHandler);
+
+void helloTaskHandler(int dt) {
+  mySerial.println("hello there!");
+}
+
+PeriodicTask helloTask(1000, helloTaskHandler);
 
 
 /* --- H A N D L E R S --- */
@@ -52,6 +62,9 @@ void buttonCalibrateHandler(ButtonEvent event, Button& button) {
 
 void setup() {
   Serial.begin(9600);
+  mySerial.begin(38400);
+  mySerial.println("Hello, world?");
+  
   pinMode(CALIBRATION_PIN, INPUT);
   // initialize zero position in both axis
   senderContext.FB_ZERO = analogRead(FRONTBACK_PIN);
@@ -70,6 +83,7 @@ void loop() {
     calibrate();
   // check if it's time to transmit the packet
   transmitTask.check(millis());
+  helloTask.check(millis());
 }
 
 /* --- Application code --- */
