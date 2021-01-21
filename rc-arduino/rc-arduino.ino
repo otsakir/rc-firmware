@@ -3,9 +3,6 @@
 #include "comm.h"
 #include "sender.h"
 
-#include <SoftwareSerial.h>
-
-SoftwareSerial mySerial(4,2);
 
 // Receiver 
 #include "receiver.h"
@@ -49,7 +46,7 @@ void transmitTaskHandler(int dt) {
 }
 
 void buttonCalibrateHandler(ButtonEvent event, Button& button) {
-  Serial.println("button calibrate pressed");
+  mySerial.println("button calibrate pressed");
   if ( !senderContext.CALIBRATING )
     startCalibration();
   else {
@@ -90,7 +87,7 @@ void loop() {
 
 void startCalibration() {
   stopTransmitting(); // make sure we're not transmitting
-  Serial.println("started calibration");
+  mySerial.println("started calibration");
   senderContext.CALIBRATING = true;
 
   senderContext.FB_ZERO = analogRead(FRONTBACK_PIN);
@@ -101,7 +98,7 @@ void startCalibration() {
 
 void stopCalibration() {
   senderContext.CALIBRATING = false;
-  Serial.println("stopped calibration");
+  mySerial.println("stopped calibration");
   dumpConfig();
   // TODO maybe we should have an explicit command of the user to start transmission
   startTransmitting();
@@ -116,12 +113,12 @@ void stopTransmitting() {
 }
 
 void dumpConfig() {
-  Serial.print("FB_ZERO: "); Serial.println(senderContext.FB_ZERO);
-  Serial.print("LR_ZERO: "); Serial.println(senderContext.LR_ZERO);
-  Serial.print("LR_MAX: "); Serial.println(senderContext.LR_MAX);
-  Serial.print("LR_MIN: "); Serial.println(senderContext.LR_MIN);
-  Serial.print("FB_MAX: "); Serial.println(senderContext.FB_MAX);
-  Serial.print("FB_MIN: "); Serial.println(senderContext.FB_MIN);
+  mySerial.print("FB_ZERO: "); Serial.println(senderContext.FB_ZERO);
+  mySerial.print("LR_ZERO: "); Serial.println(senderContext.LR_ZERO);
+  mySerial.print("LR_MAX: "); Serial.println(senderContext.LR_MAX);
+  mySerial.print("LR_MIN: "); Serial.println(senderContext.LR_MIN);
+  mySerial.print("FB_MAX: "); Serial.println(senderContext.FB_MAX);
+  mySerial.print("FB_MIN: "); Serial.println(senderContext.FB_MIN);
 
 }
 

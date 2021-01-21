@@ -43,7 +43,9 @@ struct SenderContext {
 } senderContext;
 
 // G L O B A L S
+#include <SoftwareSerial.h>
 
+SoftwareSerial mySerial(4,2);
 
 
 // reads sensor values and bundle then in SensorData
@@ -88,9 +90,9 @@ void readSensors(SensorData& packet) {
   bitSet(packet.bits, sensorbit_HORN);
   bitSet(packet.bits, sensorbit_BREAKS); 
 
-  Serial.print("FB"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, sensorbit_BACKWARD) ? "  v  " : "  ^  "  ); Serial.print(packet.fbNormalized); Serial.print("\t("); Serial.print(fb); Serial.println(")");
-  Serial.print("LR"); Serial.print("\t: "); Serial.print( bitRead(packet.bits, sensorbit_LEFT) ? "  <  " : "  >  "  ); Serial.print(packet.lrNormalized); Serial.print("\t("); Serial.print(lr); Serial.println(")"); 
-  Serial.println();
+  mySerial.print("FB"); mySerial.print("\t: "); mySerial.print( bitRead(packet.bits, sensorbit_BACKWARD) ? "  v  " : "  ^  "  ); mySerial.print(packet.fbNormalized); mySerial.print("\t("); mySerial.print(fb); mySerial.println(")");
+  mySerial.print("LR"); mySerial.print("\t: "); mySerial.print( bitRead(packet.bits, sensorbit_LEFT) ? "  <  " : "  >  "  ); mySerial.print(packet.lrNormalized); mySerial.print("\t("); mySerial.print(lr); mySerial.println(")"); 
+  mySerial.println();
 }
 
 void applyZeroTolerance(SensorData& packet) {
@@ -168,9 +170,9 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
   bitWrite(packet.bits, packetbit_MOTOR1, motor1dir);
   bitWrite(packet.bits, packetbit_MOTOR2, motor2dir);
 
-  Serial.print("fb: "); Serial.print(sensorData.fbNormalized); Serial.print("\tlr: "); Serial.print(sensorData.lrNormalized); Serial.println();
-  Serial.print("motor1: "); Serial.print(packet.motor1); Serial.print("\t direction: "); Serial.print(bitRead(packet.bits, packetbit_MOTOR1)); Serial.println();
-  Serial.print("motor2: "); Serial.print(packet.motor2); Serial.print("\t direction: "); Serial.print(bitRead(packet.bits, packetbit_MOTOR2)); Serial.println("\n");
+  mySerial.print("fb: "); mySerial.print(sensorData.fbNormalized); mySerial.print("\tlr: "); mySerial.print(sensorData.lrNormalized); mySerial.println();
+  mySerial.print("motor1: "); mySerial.print(packet.motor1); mySerial.print("\t direction: "); mySerial.print(bitRead(packet.bits, packetbit_MOTOR1)); mySerial.println();
+  mySerial.print("motor2: "); mySerial.print(packet.motor2); mySerial.print("\t direction: "); mySerial.print(bitRead(packet.bits, packetbit_MOTOR2)); mySerial.println("\n");
   
 }
 
