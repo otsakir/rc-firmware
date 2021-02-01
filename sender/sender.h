@@ -42,11 +42,6 @@ struct SenderContext {
   
 } senderContext;
 
-// G L O B A L S
-#include <SoftwareSerial.h>
-
-SoftwareSerial mySerial(4,2);
-
 
 // reads sensor values and bundle then in SensorData
 void readSensors(SensorData& packet) {

@@ -13,6 +13,9 @@
 #define ERROR_LR_TOO_HIGH "found LR value out of LR_MAX limit. Pushing limit up"
 #define ERROR_FB_TOO_LOW "found FB value out of FB_MIN limit. Pushing limit down"
 #define ERROR_FB_TOO_HIGH "found FB value out of FB_MAX limit. Pushing limit up"
+#define ERROR_PACKET_BUFFER_FULL "packet buffer full"
+
+#define TRACE_RECEIVED_BYTE_FROM_SERIAL "received byte form serial"
 
 
 // indexes of bit information in Packet.buttons 0-7
@@ -26,6 +29,7 @@ struct Packet {
   unsigned char motor1; // left motor (as we move forward)
   unsigned char motor2; // right motor
   unsigned char bits;
+  unsigned char index;  // increased by one for each different packet sent.
   byte crc;
 
   Packet() {
@@ -36,6 +40,7 @@ struct Packet {
     motor1 = 0;
     motor2 = 0;
     bits = 0;
+    index = 0;
     byte crc = 0; // CAUTION: this should be 0 when packet CRC is calculated. Add it to the packet _after_ the calculation
   }
   
@@ -62,6 +67,10 @@ byte CRC8(const byte *data, byte len) {
 
 void error(const char* msg) {
   Serial.print("[ERROR] "); Serial.println(msg);
+}
+
+void trace(const char* msg) {
+  Serial.print("[TRACE] "); Serial.println(msg);
 }
 
 

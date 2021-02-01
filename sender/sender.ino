@@ -1,11 +1,13 @@
 #include "buttons.h"
 #include "periodictask.h"
 #include "comm.h"
+
+// some arduino-specific stuff. We don't want to put that in the more generic receiver.h
+#include <SoftwareSerial.h>
+SoftwareSerial mySerial(4,2);
+
 #include "sender.h"
 
-
-// Receiver 
-#include "receiver.h"
 
 // forward declaration for remote-control arduino application 
 
@@ -36,13 +38,7 @@ void transmitTaskHandler(int dt) {
     applyZeroTolerance(senderContext.sensorData);
     buildPacket(senderContext.sensorData, senderContext.packet); // copy sensor values gathered in sensor-data variable to outgoing packet structure
     transmitPacket(senderContext.packet);
-
-    // RECEIVER
-    Packet received_packet;
-    receivePacket(received_packet);
-    processReceived(received_packet);
   }
-  
 }
 
 void buttonCalibrateHandler(ButtonEvent event, Button& button) {
@@ -66,9 +62,6 @@ void setup() {
   // initialize zero position in both axis
   senderContext.FB_ZERO = analogRead(FRONTBACK_PIN);
   senderContext.LR_ZERO = analogRead(LEFTRIGHT_PIN); 
-
-  // FOR TESTING ONLY - receiver stuff
-  receiverSetup();
   
 }
 
@@ -142,39 +135,4 @@ void transmitPacket(Packet& packet) {
   //Serial.print("fb: "); Serial.print(packet.fbNormalized); Serial.print(" - forward: "); Serial.println(bitRead(packet.bits,bit_FORWARD));
   //Serial.print("lr: "); Serial.print(packet.lrNormalized); Serial.print(" - right: "); Serial.println(bitRead(packet.bits,bit_RIGHT));
   //Serial.print("CRC8: "); Serial.println(crc);
-}
-
-
-
-/* --- R E C E I V E R --- */
-
-
-/*
- * Receives the packet from RF validates it and populates the packet structure
- * 
- * Memory handling for packet is done by outside layer. This function assumes
- * it contains  garbage, clears it and populates it by reading data from RF.
- * 
- * For testing purposes, the receiver is implmented in the same file and device 
- * with the sender. Thus, the function will read the packet from the global 
- * variable
- */
-void receivePacket(Packet& returned_packet) {
-  // TODO receive the packet
-  // ...
-  memcpy( &returned_packet, &(senderContext.packet), sizeof(Packet) );
-  //Serial.print("receivePacket:"); Serial.println(returned_packet.crc);
-}
-
-void processReceived(Packet& packet) {
-  //Serial.print("motor1 PWM"); Serial.println(packet.fbNormalized);
-  //Serial.print("motor2 PWM"); Serial.println(packet.lrNormalized);
-  // TODO!!!  convert fbNormalized, lrNormalized values to MOTOR1, MOTOR2 values
-  // ...
-  
-  analogWrite(MOTOR1_PIN, packet.motor1);
-  analogWrite(MOTOR2_PIN, packet.motor2);
-
-  digitalWrite(MOTOR1DIR_PIN, bitRead(packet.bits, packetbit_MOTOR1) );
-  digitalWrite(MOTOR2DIR_PIN, bitRead(packet.bits, packetbit_MOTOR2) );
 }
