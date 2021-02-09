@@ -31,7 +31,7 @@ struct Packet {
 
 #### Zero tolerance
 
-Στη συνέχεια, πετάμε τις πολύ μικρές τιμές για τα fbNormalized, lrNormalized. Οτιδήποτε είναι μικρότερο από το sender.h/`ZERO_TOLERANCE` γίνεται 0. Η τρέχουσα οριακή τιμή είναι 10.
+Στη συνέχεια, πετάμε τις πολύ μικρές τιμές για τα fbNormalized, lrNormalized. Οτιδήποτε είναι μικρότερο από το sender.h/`ZERO_TOLERANCE` γίνεται 0. Η τρέχουσα οριακή τιμή είναι 10. Μαζί με τις τιμές, τα αντίστοιχα direction bits `sensorbit_LEFT/RIGHT`,  γίνονται 0. Αυτό κάνει τον αλγόριθμο πιο καθαρό ενώ διόρθωσε και ένα περίεργο bug στη πορεία.
 
 ### Throttle
 
