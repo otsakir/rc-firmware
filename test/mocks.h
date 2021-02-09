@@ -7,7 +7,7 @@ typedef AnalogValues* ArduinoQueues[7]; // an array representing the values retu
 
 ArduinoQueues Arduino_Queues = {0,0,0,0,0,0,0};
 
-SerialClass mySerial;
+SerialClass mySerial(false);
 
 std::queue<int>* A0_values = 0;
 

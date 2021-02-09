@@ -172,6 +172,17 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
 }
 
 
+void transmitPacket(Packet& packet) {
+  packet.crc = 0; // reseting this since it should not be taken into account when calculating CRC. 
+  byte crc = CRC8( (byte*)&packet, sizeof(packet));
+  packet.crc = crc;
+
+  Serial.write((char*)&packet, sizeof(packet));
+  
+  //Serial.print("fb: "); Serial.print(packet.fbNormalized); Serial.print(" - forward: "); Serial.println(bitRead(packet.bits,bit_FORWARD));
+  //Serial.print("lr: "); Serial.print(packet.lrNormalized); Serial.print(" - right: "); Serial.println(bitRead(packet.bits,bit_RIGHT));
+  //Serial.print("CRC8: "); Serial.println(crc);
+}
 
 
 #endif

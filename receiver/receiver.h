@@ -8,11 +8,6 @@
 #define MOTOR1DIR_PIN 7
 #define MOTOR2DIR_PIN 8
 
-
-
-bool newPacket = false; // this is set to 'true' by serialEvent(). Set it to 'false' loop to allow parsing of new packets
-Packet incomingPacket;
-
 #define PACKET_BUFFER_SIZE 10
 #define PACKET_SIZE sizeof(Packet)
 
@@ -31,7 +26,8 @@ struct ReceiverContext {
 	unsigned char packetBuffer[PACKET_BUFFER_SIZE];
 	unsigned char readIndex = 0;	// 
 	unsigned char writeIndex = 0;	// 
-	
+	bool newPacket = false; // this is set to 'true' by serialEvent(). Set it to 'false' loop to allow parsing of new packets
+	Packet incomingPacket;
 } receiverContext;
 
 

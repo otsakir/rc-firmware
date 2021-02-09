@@ -31,46 +31,59 @@ struct SerialClass {
     //char content[CONTENT_SIZE];
     std::string content = "";
     int content_i = 0; //points to the first readable content byte. If the string is empty, it still points to 0
+    std::stringstream ss;
+    bool echo;
 
-    SerialClass() {
+    SerialClass(bool echo = true) {
 		content.reserve(1024);// create space for 1024 bytes
+		this->echo = echo;
     }
    
     void print(const char* s) {
-        std::cout << s;
+        if (echo) std::cout << s;
+        ss << s;
     }
 
     void print(int n) {
-        std::cout << n;
+        if (echo) std::cout << n;
+        ss << n;
     }
 
     void println(const char* s) {
-        std::cout << s << std::endl;
+        if (echo) std::cout << s << std::endl;
+        ss << s << std::endl;
     }
 
     void println() {
-        std::cout << std::endl;
+        if (echo) std::cout << std::endl;
+        ss << std::endl;
     }
-    	
-	std::string _getcontent() {
-		return content;
+    
+    size_t write(const char* buf, int len) {
+		ss.write(buf, len); 
+		return len; // assumes that everything was written ok
+	}
+    	    	
+	// return all content concatenated in stringstream (ss).
+	std::string _str() {
+		return ss.str();
 	}
     
-    void _appendcontent(const char* s) {
-		content.append(s);
+    std::stringstream& _buffer() {
+		return ss;
 	}
     
+    // returns the number of available characters to read from stream (ss)
     int available() {
-		return content.length() - content_i;
+		std::streampos oldp = ss.tellg();
+		ss.seekg(0, ss.end);
+		int avail = ss.tellg() - oldp;
+		ss.seekg(oldp);
+		return avail;
 	}
 	
 	int read() {
-		if (available()) {
-			int val = content[content_i];
-			content_i ++;
-			return val;
-		} else
-			return -1; // no more
+		return ss.get();
 	}
 
 } Serial;

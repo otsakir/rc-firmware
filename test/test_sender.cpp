@@ -92,7 +92,7 @@ CPUNIT_GTEST(zero_tolerance) {
     applyZeroTolerance(sensorData);
     assert_equals("sensorData.fbNormalized", 0, int(sensorData.fbNormalized)); // 9 was returned and truncated to 0
     assert_equals("sensorData.lrNormalized", 0, int(sensorData.lrNormalized)); // same here
-    assert_equals("sensorData.bits",8, int(sensorData.bits & 0b1100)); // LR direction should still be affected. We have small oposite reading but still oposite
+    assert_equals("sensorData.bits",0, int(sensorData.bits & 0b1100)); // LR direction should still be affected. We have small oposite reading but still oposite
 
     // ZERO_THRESHOLD value exceeded
     A0_values.push(512 + 30 ); 
@@ -170,6 +170,19 @@ CPUNIT_GTEST(integrated_parseSensors_to_Packet) {
     assert_equals("packet.motor2", 30, int(packet.motor2));
     assert_equals("packet.bits", 0b0000, int(packet.bits));
 
+	// check transmitted packet
+	transmitPacket(packet);
+	std::stringstream& buffer = Serial._buffer();
+	std::cout << Serial.available() << std::endl;
+	assert_equals("size of written packet", int(sizeof(Packet)), int(Serial.available()));
+	Packet transPacket;
+	buffer.read((char*)&transPacket, sizeof(Packet));
+	assert_equals("trans packet.motor1", (int)68, (int)transPacket.motor1);
+	assert_equals("trans packet.motor2", (int)30, (int)transPacket.motor2);
+	assert_equals("trans packet.bits", 0, (int)transPacket.bits);
+	assert_equals("trans packet.crc", 219, (int)transPacket.crc); // 219 is not calculated. It's just the initial value returned by the test
+	//std::cout << "motor1: " << std::hex << int(transPacket.motor1) << std::endl;
+	
     // Moving backward
     A0_values.push(512 - 100 ); 
     A1_values.push(512 );
