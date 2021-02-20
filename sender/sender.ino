@@ -1,10 +1,28 @@
 #include "buttons.h"
 #include "periodictask.h"
-#include "comm.h"
+
+#include "sender.h"
 
 // some arduino-specific stuff. We don't want to put that in the more generic receiver.h
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(4,2);
+
+void error(const char* msg) {
+  mySerial.print("[ERROR] "); mySerial.println(msg);
+}
+
+void trace(const char* msg) {
+  mySerial.print("[TRACE] "); mySerial.println(msg);
+}
+
+void warning(const char* msg, int intvalue = -32768) { // display if other than -32768
+  mySerial.print("[WARNING] "); mySerial.print(msg);
+  if (intvalue != -32768) {
+  mySerial.print(" - "); mySerial.print(intvalue); 
+  }
+  mySerial.println();
+}
+
 
 #include "sender.h"
 

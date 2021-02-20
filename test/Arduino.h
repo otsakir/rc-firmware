@@ -1,41 +1,38 @@
-#include <iostream>
+#ifndef Arduino_h
+#define Arduino_h
 
-#define A0 0
-#define A1 1
+#include <iostream>
+#include <sstream>
+#include <cstring>
+
+#define A0 13 // index in ArduinoPins array
+#define A1 14 // this one too
 
 #define byte unsigned char
 
-void bitSet(unsigned char& bits, byte index) {
-    bits = bits | (0b1 << index);
-}
+void bitSet(unsigned char& bits, byte index);
 
-void bitClear(unsigned char& bits, byte index) {
-    bits = bits & ~(0b1 << index);
-}
+void bitClear(unsigned char& bits, byte index);
 
+int bitRead(unsigned char& bits, byte index);
 
-int bitRead(unsigned char& bits, byte index) {
-    return (bits >> index) & 1;
-}
+void bitWrite(unsigned char& bits, byte index, bool value);
 
-void bitWrite(unsigned char& bits, byte index, bool value) {
-    if (value)
-        bitSet(bits, index);
-    else
-        bitClear(bits, index);
-}
+int analogRead(int port);
+
+void analogWrite(int port, unsigned char v);
+
+void digitalWrite(int port, unsigned char v);
 
 struct SerialClass {
 
 	//static const size_t CONTENT_SIZE = 128;
     //char content[CONTENT_SIZE];
     std::string content = "";
-    int content_i = 0; //points to the first readable content byte. If the string is empty, it still points to 0
     std::stringstream ss;
     bool echo;
 
     SerialClass(bool echo = true) {
-		content.reserve(1024);// create space for 1024 bytes
 		this->echo = echo;
     }
    
@@ -86,7 +83,7 @@ struct SerialClass {
 		return ss.get();
 	}
 
-} Serial;
+};
 
 struct ArduinoException {
 
@@ -98,3 +95,12 @@ struct ArduinoException {
 
 
 };
+
+
+extern SerialClass Serial;
+
+
+
+
+
+#endif

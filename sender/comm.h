@@ -14,6 +14,8 @@
 #define ERROR_FB_TOO_LOW "found FB value out of FB_MIN limit. Pushing limit down"
 #define ERROR_FB_TOO_HIGH "found FB value out of FB_MAX limit. Pushing limit up"
 #define ERROR_PACKET_BUFFER_FULL "packet buffer full"
+#define ERROR_FEWER_BYTES_IN_BUFFER "too few bytes in buffer then expected"
+#define STRING_PACKET_CRC_CHECK_FAILED "Packet CRC check failed. Dropping packet"
 
 #define TRACE_RECEIVED_BYTE_FROM_SERIAL "received byte form serial"
 
@@ -32,8 +34,15 @@ struct Packet {
   unsigned char index;  // increased by one for each different packet sent.
   byte crc;
 
-  Packet() {
-    reset();
+  Packet() : Packet(0,0,0,0,0) {
+  }
+  
+  Packet(unsigned char m1, unsigned char m2, unsigned char b, unsigned char i, byte c) {
+	  motor1 = m1;
+	  motor2 = m2;
+	  bits = b;
+	  index = i;
+	  crc = c;
   }
 
   void reset() {
@@ -41,38 +50,12 @@ struct Packet {
     motor2 = 0;
     bits = 0;
     index = 0;
-    byte crc = 0; // CAUTION: this should be 0 when packet CRC is calculated. Add it to the packet _after_ the calculation
+    crc = 0;    
   }
   
 };
 
-// CRC-8 - based on the CRC8 formulas by Dallas/Maxim
-// code released under the therms of the GNU GPL 3.0 license
-// copied from: https://www.leonardomiliani.com/en/2013/un-semplice-crc8-per-arduino/
-byte CRC8(const byte *data, byte len) {
-  byte crc = 0x00;
-  while (len--) {
-    byte extract = *data++;
-    for (byte tempI = 8; tempI; tempI--) {
-      byte sum = (crc ^ extract) & 0x01;
-      crc >>= 1;
-      if (sum) {
-        crc ^= 0x8C;
-      }
-      extract >>= 1;
-    }
-  }
-  return crc;
-}
-
-void error(const char* msg) {
-  Serial.print("[ERROR] "); Serial.println(msg);
-}
-
-void trace(const char* msg) {
-  Serial.print("[TRACE] "); Serial.println(msg);
-}
-
+byte CRC8(const byte *data, byte len);
 
 
 

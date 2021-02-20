@@ -1,1 +1,4 @@
 *.geany
+test/test_sender
+test/test_receiver
+
