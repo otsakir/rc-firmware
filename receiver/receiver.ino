@@ -1,5 +1,8 @@
 #include "comm.h"
 
+#include "receiver.h"
+
+
 // some arduino-specific stuff. We don't want to put that in the more generic receiver.h
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(4,2);
@@ -20,7 +23,6 @@ void warning(const char* msg, int intvalue = -32768) { // display if other than 
   mySerial.println();
 }
 
-#include "receiver.h"
 
 void setup() {
   Serial.begin(9600); 		// used for RF communication
@@ -39,6 +41,9 @@ void loop() {
   // check if there is incoming packet ready to be executed
   checkReceived(receiverContext); // decleared in receiver.h
 }
+
+
+/* --- Callbacks --- */
 
 void onPacketDropped(Packet& droppedPacket) {
 	mySerial.println("Dropped!");

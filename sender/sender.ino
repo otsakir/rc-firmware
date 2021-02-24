@@ -1,11 +1,13 @@
 #include "buttons.h"
 #include "periodictask.h"
 
+#include <SoftwareSerial.h>
+SoftwareSerial mySerial(4,2);
+
 #include "sender.h"
 
 // some arduino-specific stuff. We don't want to put that in the more generic receiver.h
-#include <SoftwareSerial.h>
-SoftwareSerial mySerial(4,2);
+
 
 void error(const char* msg) {
   mySerial.print("[ERROR] "); mySerial.println(msg);
@@ -15,17 +17,13 @@ void trace(const char* msg) {
   mySerial.print("[TRACE] "); mySerial.println(msg);
 }
 
-void warning(const char* msg, int intvalue = -32768) { // display if other than -32768
+void warning(const char* msg, int intvalue /*= -32768*/) { // display if other than -32768
   mySerial.print("[WARNING] "); mySerial.print(msg);
   if (intvalue != -32768) {
   mySerial.print(" - "); mySerial.print(intvalue); 
   }
   mySerial.println();
 }
-
-
-#include "sender.h"
-
 
 // forward declaration for remote-control arduino application 
 
@@ -34,21 +32,13 @@ void transmitTaskHandler(int dt);
 
 
 
-// --- GLOBAL VARIABLES --- */
-
-// BUTTON_PRESS means fires when button is actually released
+// BUTTON_PRESS - fire when button is actually released
 Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
 // transmit every 1000 msec
 PeriodicTask transmitTask(10, transmitTaskHandler);
 
-void helloTaskHandler(int dt) {
-  mySerial.println("hello there!");
-}
 
-PeriodicTask helloTask(1000, helloTaskHandler);
-
-
-/* --- H A N D L E R S --- */
+/* --- Handlers --- */
 
 void transmitTaskHandler(int dt) {
   if (senderContext.TRANSMITTING) {
@@ -91,7 +81,6 @@ void loop() {
     calibrate();
   // check if it's time to transmit the packet
   transmitTask.check(millis());
-  helloTask.check(millis());
 }
 
 /* --- Application code --- */

@@ -10,6 +10,17 @@
 
 #define byte unsigned char
 
+#include <queue>
+
+typedef std::queue<int> AnalogValues; // a series of analog values. It represents the values returned by a single arduino analog port
+typedef AnalogValues* ArduinoQueues[7]; // an array representing the values returned by all arduino analog ports. There are 7 of them.
+typedef std::queue<int> ArduinoPinQueue;
+
+ArduinoQueues Arduino_Queues = {0,0,0,0,0,0,0};
+ArduinoPinQueue ArduinoPins[15];
+std::queue<int>* A0_values = 0;
+
+
 void bitSet(unsigned char& bits, byte index);
 
 void bitClear(unsigned char& bits, byte index);
@@ -85,6 +96,7 @@ struct SerialClass {
 
 };
 
+
 struct ArduinoException {
 
     std::string message;
@@ -96,6 +108,55 @@ struct ArduinoException {
 
 };
 
+
+
+
+void bitSet(unsigned char& bits, byte index) {
+    bits = bits | (0b1 << index);
+}
+
+void bitClear(unsigned char& bits, byte index) {
+    bits = bits & ~(0b1 << index);
+}
+
+
+int bitRead(unsigned char& bits, byte index) {
+    return (bits >> index) & 1;
+}
+
+void bitWrite(unsigned char& bits, byte index, bool value) {
+    if (value)
+        bitSet(bits, index);
+    else
+        bitClear(bits, index);
+}
+
+int analogRead(int port) {
+    if (!Arduino_Queues[port] || Arduino_Queues[port]->empty())
+        throw ArduinoException(std::string("Arduino analog queue empty or not initialized: A") + std::to_string(port));
+
+    int v = Arduino_Queues[port]->front();
+    Arduino_Queues[port]->pop();
+    return v;
+}
+
+void analogWrite(int port, unsigned char v) {
+	//if (!Arduino_Queues[port])
+    //    throw ArduinoException(std::string("Arduino analog queue not initialized: A") + std::to_string(port));
+    //Arduino_Queues[port]->push(v);
+    ArduinoPins[port].push(v);
+}
+
+void digitalWrite(int port, unsigned char v) {
+	//if (!Arduino_Queues[port])
+      //  throw ArduinoException(std::string("Arduino analog queue not initialized: A") + std::to_string(port));
+    ArduinoPins[port].push(v);
+    //Arduino_Queues[port]->push(v);	
+}
+
+
+
+SerialClass Serial;
 
 extern SerialClass Serial;
 

@@ -1,7 +1,7 @@
 /*
  * Build test with: 
  * 
- * .../grasscutter/test$ g++ -g -o0 -I.   -I../sender/  -L/home/nando/src/CPUnit_0.95/lib -L../sender/  -o test_sender test_sender.cpp ../sender/sender.cpp ../sender/utils.cpp Arduino.cpp mocks.cpp -I/home/nando/src/CPUnit_0.95/src/ -lCPUnit
+ * .../grasscutter/test$ g++ -g -o0 -I.   -I../sender/  -L/home/nando/src/CPUnit_0.95/lib -L../sender/  -o test_sender test_sender.cpp -I/home/nando/src/CPUnit_0.95/src/ -lCPUnit
  * 
  */
 

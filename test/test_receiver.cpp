@@ -1,7 +1,7 @@
 /*
  * Build test with: 
  * 
- * .../grasscutter/test$ g++ -g -o0 -I.   -I../receiver/  -L/home/nando/src/CPUnit_0.95/lib -L../receiver/  -o test_receiver test_receiver.cpp ../receiver/receiver.cpp ../receiver/utils.cpp Arduino.cpp mocks.cpp -I/home/nando/src/CPUnit_0.95/src/ -lCPUnit
+ * .../grasscutter/test$ g++ -g -o0 -I.   -I../receiver/  -L/home/nando/src/CPUnit_0.95/lib -L../receiver/  -o test_receiver test_receiver.cpp  -I/home/nando/src/CPUnit_0.95/src/ -lCPUnit
  * 
  */
 
@@ -24,8 +24,6 @@ void onPacketReceived(Packet& packet) {
   digitalWrite(MOTOR1DIR_PIN, bitRead(packet.bits, packetbit_MOTOR1) );
   digitalWrite(MOTOR2DIR_PIN, bitRead(packet.bits, packetbit_MOTOR2) );
 }
-
-#include <receiver.h>
 
 
 #include <queue>
@@ -51,7 +49,7 @@ CPUNIT_GTEST(read_sensors) {
     std::cout << Serial.available() << std::endl;
     
     Packet packet1(50,60,4,15,0); // 4, stands for packetbit_MOTOR1 bit set
-    packet1.crc = CRC8((byte*) &packet1, sizeof(Packet)) + 1;
+    packet1.crc = CRC8((byte*) &packet1, sizeof(Packet));
     // simulate receiving of bytes
     Serial._buffer().write((char*) &packet1, sizeof(Packet));
     
