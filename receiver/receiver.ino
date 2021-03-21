@@ -1,11 +1,10 @@
 #include "comm.h"
 
-#include "receiver.h"
-
-
 // some arduino-specific stuff. We don't want to put that in the more generic receiver.h
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(4,2);
+
+#include "receiver.h"
 
 void error(const char* msg) {
   mySerial.print("[ERROR] "); mySerial.println(msg);
@@ -26,8 +25,9 @@ void warning(const char* msg, int intvalue = -32768) { // display if other than 
 
 void setup() {
   Serial.begin(9600); 		// used for RF communication
-  mySerial.begin(38400);	// used for debuging
+  mySerial.begin(38400);	// used for // used for serial monitoring
   mySerial.println("Hello, world?");
+  mySerial.print("sizeof(Packet):"); mySerial.println(sizeof(Packet));
   
   pinMode(MOTOR1_PIN, OUTPUT);
   pinMode(MOTOR2_PIN, OUTPUT);
@@ -50,6 +50,7 @@ void onPacketDropped(Packet& droppedPacket) {
 }
 
 void onPacketReceived(Packet& packet) {
+  mySerial.println("Packet received");
   analogWrite(MOTOR1_PIN, packet.motor1);
   analogWrite(MOTOR2_PIN, packet.motor2);
   digitalWrite(MOTOR1DIR_PIN, bitRead(packet.bits, packetbit_MOTOR1) );

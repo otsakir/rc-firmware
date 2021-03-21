@@ -35,7 +35,7 @@ void transmitTaskHandler(int dt);
 // BUTTON_PRESS - fire when button is actually released
 Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
 // transmit every 1000 msec
-PeriodicTask transmitTask(10, transmitTaskHandler);
+PeriodicTask transmitTask(1000, transmitTaskHandler);
 
 
 /* --- Handlers --- */
@@ -62,8 +62,8 @@ void buttonCalibrateHandler(ButtonEvent event, Button& button) {
 /* ---  Arduino-specific stuff --- */
 
 void setup() {
-  Serial.begin(9600);
-  mySerial.begin(38400);
+  Serial.begin(9600); // used for RF comminication
+  mySerial.begin(38400); // used for serial monitoring
   mySerial.println("Hello, world?");
   
   pinMode(CALIBRATION_PIN, INPUT);
@@ -113,12 +113,12 @@ void stopTransmitting() {
 }
 
 void dumpConfig() {
-  mySerial.print("FB_ZERO: "); Serial.println(senderContext.FB_ZERO);
-  mySerial.print("LR_ZERO: "); Serial.println(senderContext.LR_ZERO);
-  mySerial.print("LR_MAX: "); Serial.println(senderContext.LR_MAX);
-  mySerial.print("LR_MIN: "); Serial.println(senderContext.LR_MIN);
-  mySerial.print("FB_MAX: "); Serial.println(senderContext.FB_MAX);
-  mySerial.print("FB_MIN: "); Serial.println(senderContext.FB_MIN);
+  mySerial.print("FB_ZERO: "); mySerial.println(senderContext.FB_ZERO);
+  mySerial.print("LR_ZERO: "); mySerial.println(senderContext.LR_ZERO);
+  mySerial.print("LR_MAX: "); mySerial.println(senderContext.LR_MAX);
+  mySerial.print("LR_MIN: "); mySerial.println(senderContext.LR_MIN);
+  mySerial.print("FB_MAX: "); mySerial.println(senderContext.FB_MAX);
+  mySerial.print("FB_MIN: "); mySerial.println(senderContext.FB_MIN);
 
 }
 

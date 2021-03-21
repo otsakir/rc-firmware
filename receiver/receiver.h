@@ -89,8 +89,10 @@ bool verifyCrc(Packet& packet) {
 
 void serialEvent() {
 	unsigned char wi; // temporary write index
-	while( Serial.available() ) {
-		// there is a pending byte see where we would put it
+  int avail = Serial.available();
+	mySerial.print("serialEvent: available(): "); mySerial.println(avail); 
+	while( avail ) {
+    // there is a pending byte see where we would put it
 		wi = receiverContext.writeIndex;
 		wi ++;
 		if (wi == PACKET_BUFFER_SIZE)
@@ -107,6 +109,7 @@ void serialEvent() {
 		
 		// now try to form a packet from the data in the packet buffer
 		while (!receiverContext.newPacket && readySizeInBuffer(receiverContext) >= PACKET_SIZE) {
+      mySerial.println("trying to form a packet");
 			Packet packet;
 			if ( tryPacket(packet, receiverContext) ) {
 				// packet updated
@@ -127,6 +130,7 @@ void serialEvent() {
 			if (receiverContext.readIndex >= PACKET_BUFFER_SIZE)
 				receiverContext.readIndex = 0;
 		}
+   avail = Serial.available();
 	}
 }
 

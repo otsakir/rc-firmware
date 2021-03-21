@@ -52,6 +52,7 @@ CPUNIT_GTEST(read_sensors) {
     packet1.crc = CRC8((byte*) &packet1, sizeof(Packet));
     // simulate receiving of bytes
     Serial._buffer().write((char*) &packet1, sizeof(Packet));
+    Serial._buffer().write((char*) &packet1, sizeof(Packet));
     
     std::cout << Serial.available() << std::endl;
     
@@ -62,7 +63,9 @@ CPUNIT_GTEST(read_sensors) {
     std::cout << Serial.available() << std::endl;
     
     // process packet and push data to I/O ports
-    checkReceived(receiverContext);
+    for (int i = 1; i <= 10; i++) {
+		checkReceived(receiverContext);
+	}
     
     assert_equals("motor1", 50, ArduinoPins[MOTOR1_PIN].front());
     assert_equals("motor1", 60, ArduinoPins[MOTOR2_PIN].front());

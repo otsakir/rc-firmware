@@ -61,6 +61,11 @@ struct SerialClass {
         if (echo) std::cout << s << std::endl;
         ss << s << std::endl;
     }
+    
+    void println(int i) {
+		if (echo) std::cout << i << std::endl;
+		ss << i << std::endl;
+	}
 
     void println() {
         if (echo) std::cout << std::endl;
