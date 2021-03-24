@@ -102,9 +102,9 @@ void readSensors(SensorData& packet) {
   bitSet(packet.bits, sensorbit_HORN);
   bitSet(packet.bits, sensorbit_BREAKS); 
 
-  mySerial.print("FB"); mySerial.print("\t: "); mySerial.print( bitRead(packet.bits, sensorbit_BACKWARD) ? "  v  " : "  ^  "  ); mySerial.print(packet.fbNormalized); mySerial.print("\t("); mySerial.print(fb); mySerial.println(")");
-  mySerial.print("LR"); mySerial.print("\t: "); mySerial.print( bitRead(packet.bits, sensorbit_LEFT) ? "  <  " : "  >  "  ); mySerial.print(packet.lrNormalized); mySerial.print("\t("); mySerial.print(lr); mySerial.println(")"); 
-  mySerial.println();
+  //mySerial.print("FB"); mySerial.print("\t: "); mySerial.print( bitRead(packet.bits, sensorbit_BACKWARD) ? "  v  " : "  ^  "  ); mySerial.print(packet.fbNormalized); mySerial.print("\t("); mySerial.print(fb); mySerial.println(")");
+  //mySerial.print("LR"); mySerial.print("\t: "); mySerial.print( bitRead(packet.bits, sensorbit_LEFT) ? "  <  " : "  >  "  ); mySerial.print(packet.lrNormalized); mySerial.print("\t("); mySerial.print(lr); mySerial.println(")"); 
+  //mySerial.println();
 }
 
 void applyZeroTolerance(SensorData& packet) {
@@ -178,9 +178,9 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
   bitWrite(packet.bits, packetbit_MOTOR1, motor1dir);
   bitWrite(packet.bits, packetbit_MOTOR2, motor2dir);
 
-  mySerial.print("fb: "); mySerial.print(sensorData.fbNormalized); mySerial.print("\tlr: "); mySerial.print(sensorData.lrNormalized); mySerial.println();
-  mySerial.print("motor1: "); mySerial.print(packet.motor1); mySerial.print("\t direction: "); mySerial.print(bitRead(packet.bits, packetbit_MOTOR1)); mySerial.println();
-  mySerial.print("motor2: "); mySerial.print(packet.motor2); mySerial.print("\t direction: "); mySerial.print(bitRead(packet.bits, packetbit_MOTOR2)); mySerial.println("\n");
+  //mySerial.print("fb: "); mySerial.print(sensorData.fbNormalized); mySerial.print("\tlr: "); mySerial.print(sensorData.lrNormalized); mySerial.println();
+  //mySerial.print("motor1: "); mySerial.print(packet.motor1); mySerial.print("\t direction: "); mySerial.print(bitRead(packet.bits, packetbit_MOTOR1)); mySerial.println();
+  //mySerial.print("motor2: "); mySerial.print(packet.motor2); mySerial.print("\t direction: "); mySerial.print(bitRead(packet.bits, packetbit_MOTOR2)); mySerial.println("\n");
   
 }
 
@@ -191,6 +191,7 @@ void transmitPacket(Packet& packet) {
   packet.crc = crc;
 
   Serial.write((char*)&packet, sizeof(packet));
+  mySerial.print("M1 "); mySerial.print(packet.motor1); mySerial.print("  M2 "); mySerial.println(packet.motor2);
   
   //Serial.print("fb: "); Serial.print(packet.fbNormalized); Serial.print(" - forward: "); Serial.println(bitRead(packet.bits,bit_FORWARD));
   //Serial.print("lr: "); Serial.print(packet.lrNormalized); Serial.print(" - right: "); Serial.println(bitRead(packet.bits,bit_RIGHT));

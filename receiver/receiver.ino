@@ -11,7 +11,7 @@ void error(const char* msg) {
 }
 
 void trace(const char* msg) {
-  mySerial.print("[TRACE] "); mySerial.println(msg);
+  //mySerial.print("[TRACE] "); mySerial.println(msg);
 }
 
 void warning(const char* msg, int intvalue = -32768) { // display if other than -32768
@@ -50,9 +50,12 @@ void onPacketDropped(Packet& droppedPacket) {
 }
 
 void onPacketReceived(Packet& packet) {
-  mySerial.println("Packet received");
+  mySerial.print("Packet received: ");
+  bool dir1 = bitRead(packet.bits, packetbit_MOTOR1);
+  bool dir2 = bitRead(packet.bits, packetbit_MOTOR2);
+  mySerial.print("M1 "); mySerial.print(dir1 ? "-" : "+"); mySerial.print(packet.motor1); mySerial.print("  M2 "); mySerial.print(dir2 ? "-" : "+"); mySerial.println(packet.motor2);
   analogWrite(MOTOR1_PIN, packet.motor1);
   analogWrite(MOTOR2_PIN, packet.motor2);
-  digitalWrite(MOTOR1DIR_PIN, bitRead(packet.bits, packetbit_MOTOR1) );
-  digitalWrite(MOTOR2DIR_PIN, bitRead(packet.bits, packetbit_MOTOR2) );
+  digitalWrite(MOTOR1DIR_PIN, dir1);
+  digitalWrite(MOTOR2DIR_PIN, dir2);
 }

@@ -35,7 +35,7 @@ void transmitTaskHandler(int dt);
 // BUTTON_PRESS - fire when button is actually released
 Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
 // transmit every 1000 msec
-PeriodicTask transmitTask(1000, transmitTaskHandler);
+PeriodicTask transmitTask(10, transmitTaskHandler);
 
 
 /* --- Handlers --- */
@@ -64,7 +64,7 @@ void buttonCalibrateHandler(ButtonEvent event, Button& button) {
 void setup() {
   Serial.begin(9600); // used for RF comminication
   mySerial.begin(38400); // used for serial monitoring
-  mySerial.println("Hello, world?");
+  mySerial.println("sender: hello");
   
   pinMode(CALIBRATION_PIN, INPUT);
   // initialize zero position in both axis

@@ -51,9 +51,9 @@ unsigned char readySizeInBuffer(ReceiverContext& ctx) {
   return (ctx.writeIndex + PACKET_BUFFER_SIZE - ctx.readIndex) % PACKET_BUFFER_SIZE;
 }
 
-// try to form a valid packet with the oldest bytes in the buffer. If invalid we should discard the first byte.
+// try to form a valid packet with the oldest bytes in the buffer. If invalid we should discard the first byte only.
 // packet is used as a temporary memory location for the packet. It will be altered even if a proper packet is not extracted
-bool tryPacket(Packet& packet, ReceiverContext context) {
+bool tryPacket(Packet& packet, ReceiverContext& context) {
   unsigned char* ppacket = (unsigned char*) &packet;
   unsigned char count = 0; // bytes read from buffer
   unsigned char ri = context.readIndex;
@@ -64,6 +64,7 @@ bool tryPacket(Packet& packet, ReceiverContext context) {
     if (ri >= PACKET_BUFFER_SIZE)
       ri = 0;
   }
+  context.readIndex = ri;
   
   // we should always reach PACKET_SIZE since the other break condition should not occur if the caller has confirmed
   // that there are enough bytes in the buffer to form a packet
@@ -90,7 +91,9 @@ bool verifyCrc(Packet& packet) {
 void serialEvent() {
 	unsigned char wi; // temporary write index
   int avail = Serial.available();
-	mySerial.print("serialEvent: available(): "); mySerial.println(avail); 
+  int buffered = readySizeInBuffer(receiverContext);
+	//mySerial.print("serialEvent: available(): "); mySerial.println(avail); 
+  //mySerial.print("buffered: "); mySerial.println(buffered);
 	while( avail ) {
     // there is a pending byte see where we would put it
 		wi = receiverContext.writeIndex;
@@ -109,7 +112,7 @@ void serialEvent() {
 		
 		// now try to form a packet from the data in the packet buffer
 		while (!receiverContext.newPacket && readySizeInBuffer(receiverContext) >= PACKET_SIZE) {
-      mySerial.println("trying to form a packet");
+      //mySerial.println("trying to form a packet");
 			Packet packet;
 			if ( tryPacket(packet, receiverContext) ) {
 				// packet updated
