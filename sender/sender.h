@@ -9,7 +9,7 @@
 #define FRONTBACK_PIN A0
 #define LEFTRIGHT_PIN A1
 #define CALIBRATION_PIN 3
-#define ZERO_THRESHOLD 10 // fb/lr threshold value under which it's considered zero. It's 10 from 255.
+#define ZERO_THRESHOLD 20 // fb/lr threshold value under which it's considered zero. It's 10 from 255.
 #define TURN_FACTOR 1 // that's a factor affecting how quickly to turn
 
 // indexes of bit information in SensorData 
@@ -88,7 +88,7 @@ void readSensors(SensorData& packet) {
       senderContext.LR_MAX = lr;
     }
     packet.lrNormalized = ((long)(lr - senderContext.LR_ZERO)) * 255 / (senderContext.LR_MAX - senderContext.LR_ZERO);
-    bitClear(packet.bits, sensorbit_LEFT);
+    bitSet(packet.bits, sensorbit_LEFT);
   } else
   if (lr < senderContext.LR_ZERO) {
     if (lr < senderContext.LR_MIN) {
@@ -96,7 +96,7 @@ void readSensors(SensorData& packet) {
       senderContext.LR_MIN = lr;
     }
     packet.lrNormalized = ((long)(senderContext.LR_ZERO - lr)) * 255 / (senderContext.LR_ZERO - senderContext.LR_MIN);
-    bitSet(packet.bits, sensorbit_LEFT);
+    bitClear(packet.bits, sensorbit_LEFT);
   }
   // TODO read horn and breaks buttons. For now, set them both to true - 1  
   bitSet(packet.bits, sensorbit_HORN);
