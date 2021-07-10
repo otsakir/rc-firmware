@@ -1,6 +1,18 @@
 #include "buttons.h"
 #include "periodictask.h"
 
+/*  Ports used 
+ *  
+ *  TX - other board RX
+ *  RX - other board TX
+ *  D4 - external serial board/TX
+ *  D2 - external serial board/RX
+ *  D3 - calibration button
+ *  A0 - joystick front/back input
+ *  A1 - joystick left/right input
+ *  
+ */
+
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(4,2);
 

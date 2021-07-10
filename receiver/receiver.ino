@@ -1,5 +1,18 @@
 #include "comm.h"
 
+/*  Ports used 
+ *  
+ *  TX - sender board RX
+ *  RX - sender board TX
+ *  D4 - external serial board/TX
+ *  D2 - external serial board/RX
+ *  D7 - motor1 dir
+ *  D8 - motor2 dir
+ *  D9 - motor1 throttle
+ *  D10 - motor2 throttle
+ *  
+ */
+
 // some arduino-specific stuff. We don't want to put that in the more generic receiver.h
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(4,2);
