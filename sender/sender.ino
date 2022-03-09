@@ -1,6 +1,10 @@
 #include "buttons.h"
 #include "periodictask.h"
 
+#include <SPI.h>
+#include "printf.h"
+#include "RF24.h"
+
 /*  Ports used 
  *  
  *  TX - other board RX
@@ -14,6 +18,19 @@
  */
 
 
+#define IS_RC true
+#define IS_VEHICLE !IS_RC
+#define RF_LEVEL RF24_PA_MIN
+
+// RF24 customizable pins
+#define CE_PIN 7
+#define CSN_PIN 8
+
+namespace Rf {
+    uint8_t sendAddress[6] = "1Node";
+    uint8_t receiveAddress[6] = "2Node";
+}
+
 #include "sender.h"
 
 // forward declarations
@@ -23,6 +40,9 @@ void dumpConfig();
 void calibrate();
 void startTransmitting();
 void stopTransmitting();
+
+
+
 
 // some arduino-specific stuff. We don't want to put that in the more generic receiver.h
 
@@ -87,6 +107,8 @@ void setup() {
   // initialize zero position in both axis
   senderContext.FB_ZERO = analogRead(FRONTBACK_PIN);
   senderContext.LR_ZERO = analogRead(LEFTRIGHT_PIN); 
+  
+  Rf::init();
   
 }
 
