@@ -63,6 +63,33 @@ struct Packet {
 Για να φορτώσεις νέο πρόγραμμα στις σε sender ή receiver πρέπει να αποσυνδέσεις τα καλώδια TX/RX με οποία επικοινωνούν οι πλακέτες μεταξύ τους (εάν χρησιμοποιείς σύνδεση μέσω καλωδίου και όχι RF τουλάχιστον). 
 
 
+### Quick deployment - arduino-mk
+
+Ο χρόνος αναπτυξής μπορεί να περιοριστεί σημαντικά αν χρησιμοποιηθούν το make για build και "deployment" αντί για τον arduino IDE. Σε ubunt αυτό γινεται με:
+
+    $ sudo apt install arduino-mk
+    
+και από τον κατάλογο του sender/receiver:
+
+    $ MONITOR_PORT=/dev/ttyUSB0 BOARD_SUB=atmega328old BOARD_TAG=nano make && MONITOR_PORT=/dev/ttyUSB0 BOARD_SUB=atmega328old BOARD_TAG=nano make upload && MONITOR_PORT=/dev/ttyUSB0 BOARD_SUB=atmega328old BOARD_TAG=nano make monitor
+    
+Το παραπάνω, θα κάνει build, να ανεβάσει και να ανοίξει το monitor στο τρέχον τερματικό. Κλείσε με Ctrl+A +K (τρέχει screen από κάτω).
+
+Περισσότερα από ένα τερματικά μπορούν να παίξουν παράλληλα. Κάθε project περιέχει ένα πρόσθετο Makefile ενώ τα project εξακολουθούν να είναι επεξεργάσιμα με τον arduino IDE.
+
+θέλει και κάποιες περιβαλλοντικές μεταβλητές. Στην δικιά μου περίπτωση είναι:
+
+    cat ~/.bashrc
+    ...
+    export ARDUINO_DIR=/home/nando/bin/arduino-1.8.13
+    export ARDMK_DIR=/usr/share/arduino
+    export AVR_TOOLS_DIR=/
+    
+Δες αυτό για περισσότερα - https://github.com/sudar/Arduino-Makefile
+
+
+
+
 
 
 
