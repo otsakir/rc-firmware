@@ -98,6 +98,7 @@ namespace Rf {
         radio.printPrettyDetails(); // (larger) function that prints human readable data
     }
     
+    // send over air
     bool send(const Packet& packet) {
         //unsigned long start_timer = micros();                    // start the timer
         bool report = radio.write(&packet, sizeof(packet));      // transmit & save the report
@@ -118,6 +119,31 @@ namespace Rf {
         }
 
     }
+    
+    // receive from air. Returns number of packets (1) or -1 in case of error.
+    int recv(Packet& packet) {
+        uint8_t pipe;
+        
+        if (radio.available(&pipe)) {             // is there a payload? get the pipe number that recieved it
+          uint8_t bytes = radio.getPayloadSize(); // get the size of the payload
+          if ( bytes != sizeof(Packet) ) {
+              Serial.print("invalid incoming size packet"); Serial.println(bytes);
+              return -1;
+          }
+          radio.read(&packet, bytes);            // fetch payload from FIFO
+          /*Serial.print(F("Received "));
+          Serial.print(bytes);                    // print the size of the payload
+          Serial.print(F(" bytes on pipe "));
+          Serial.print(pipe);                     // print the pipe number
+          Serial.print(F(": "));
+          payload.println();*/
+          
+          return 1;
+        } else {
+            return 0;
+        }
+    } 
+    
 
 }
 

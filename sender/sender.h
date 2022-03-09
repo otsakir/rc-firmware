@@ -199,9 +199,10 @@ void transmitPacket(Packet& packet) {
       Serial.println(F("Transmission failed or timed out"));
   } else {
       Serial.println("successfully sent");
+      Serial.print("M1 "); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.println(packet.motor2);
   }
   
-  //Serial.print("M1 "); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.println(packet.motor2);
+  
   
   //Serial.print("fb: "); Serial.print(packet.fbNormalized); Serial.print(" - forward: "); Serial.println(bitRead(packet.bits,bit_FORWARD));
   //Serial.print("lr: "); Serial.print(packet.lrNormalized); Serial.print(" - right: "); Serial.println(bitRead(packet.bits,bit_RIGHT));

@@ -1,4 +1,8 @@
-#include "comm.h"
+
+#include <SPI.h>
+#include "printf.h"
+#include "RF24.h"
+
 
 /*  Ports used 
  *  
@@ -13,39 +17,51 @@
  *  
  */
 
-// some arduino-specific stuff. We don't want to put that in the more generic receiver.h
-#include <SoftwareSerial.h>
-SoftwareSerial mySerial(4,2);
+
+#define IS_RC false
+#define IS_VEHICLE !IS_RC
+#define RF_LEVEL RF24_PA_MIN
+
+// RF24 customizable pins
+#define CE_PIN 7
+#define CSN_PIN 8
+
+namespace Rf {
+    uint8_t sendAddress[6] = "2Node";
+    uint8_t receiveAddress[6] = "1Node";
+}
+
 
 #include "receiver.h"
 
 void error(const char* msg) {
-  mySerial.print("[ERROR] "); mySerial.println(msg);
+  Serial.print("[ERROR] "); Serial.println(msg);
 }
 
 void trace(const char* msg) {
-  //mySerial.print("[TRACE] "); mySerial.println(msg);
+  //Serial.print("[TRACE] "); Serial.println(msg);
 }
 
 void warning(const char* msg, int intvalue = -32768) { // display if other than -32768
-  mySerial.print("[WARNING] "); mySerial.print(msg);
+  Serial.print("[WARNING] "); Serial.print(msg);
   if (intvalue != -32768) {
-  mySerial.print(" - "); mySerial.print(intvalue); 
+  Serial.print(" - "); Serial.print(intvalue); 
   }
-  mySerial.println();
+  Serial.println();
 }
 
 
 void setup() {
-  Serial.begin(9600); 		// used for RF communication
-  mySerial.begin(38400);	// used for // used for serial monitoring
-  mySerial.println("Hello, world?");
-  mySerial.print("sizeof(Packet):"); mySerial.println(sizeof(Packet));
+  Serial.begin(57600);	// used for // used for serial monitoring
+  Serial.println("Hello, world?");
+  Serial.print("sizeof(Packet):"); Serial.println(sizeof(Packet));
   
   pinMode(MOTOR1_PIN, OUTPUT);
   pinMode(MOTOR2_PIN, OUTPUT);
   pinMode(MOTOR1DIR_PIN,OUTPUT);
   pinMode(MOTOR2DIR_PIN, OUTPUT);
+  
+  Rf::init();  
 }
 
 int incomingByte = 0; // for incoming serial data
@@ -59,16 +75,16 @@ void loop() {
 /* --- Callbacks --- */
 
 void onPacketDropped(Packet& droppedPacket) {
-	mySerial.println("Dropped!");
+	Serial.println("Dropped!");
 }
 
 void onPacketReceived(Packet& packet) {
-  mySerial.print("Packet received: ");
+  Serial.print("Packet received: ");
   bool dir1 = bitRead(packet.bits, packetbit_MOTOR1);
   bool dir2 = bitRead(packet.bits, packetbit_MOTOR2);
-  mySerial.print("M1 "); mySerial.print(dir1 ? "-" : "+"); mySerial.print(packet.motor1); mySerial.print("  M2 "); mySerial.print(dir2 ? "-" : "+"); mySerial.println(packet.motor2);
-  analogWrite(MOTOR1_PIN, packet.motor1);
+  Serial.print("M1 "); Serial.print(dir1 ? "-" : "+"); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.print(dir2 ? "-" : "+"); Serial.println(packet.motor2);
+/*  analogWrite(MOTOR1_PIN, packet.motor1);
   analogWrite(MOTOR2_PIN, packet.motor2);
   digitalWrite(MOTOR1DIR_PIN, dir1);
-  digitalWrite(MOTOR2DIR_PIN, dir2);
+  digitalWrite(MOTOR2DIR_PIN, dir2);*/
 }
