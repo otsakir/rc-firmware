@@ -15,7 +15,7 @@
 #include "RF24.h"
 
 // instantiate an object for the nRF24L01 transceiver
-RF24 radio(5, 6); // using pin 7 for the CE pin, and pin 8 for the CSN pin
+RF24 radio(7, 8); // using pin 7 for the CE pin, and pin 8 for the CSN pin
 
 // Let these addresses be used for the pair
 uint8_t address[][6] = {"1Node", "2Node"};
@@ -47,11 +47,18 @@ void setup() {
     while (1) {} // hold in infinite loop
   }
 
+  if (radio.isChipConnected()) {
+    Serial.println("chip is CONNECTED");
+  } else {
+    Serial.println("chip is NOT CONNECTED!");
+  }
+  Serial.print("isPVariant(): "); Serial.println(radio.isPVariant());
+
   // print example's introductory prompt
   Serial.println(F("RF24/examples/GettingStarted"));
 
   // To set the radioNumber via the Serial monitor on startup
-  Serial.println(F("Which radio is this? Enter '0' or '1'. Defaults to '0'"));
+  Serial.println(F("Peer2: which radio is this? Enter '0' or '1'. Defaults to '0'"));
   while (!Serial.available()) {
     // wait for user input
   }
@@ -61,16 +68,18 @@ void setup() {
   Serial.println((int)radioNumber);
 
   // role variable is hardcoded to RX behavior, inform the user of this
-  Serial.println(F("*** PRESS 'T' to begin transmitting to the other node"));
+  Serial.println(F("*** PRESS 'T' to beggggin transmitting to the other node"));
 
   // Set the PA Level low to try preventing power supply related problems
   // because these examples are likely run with nodes in close proximity to
   // each other.
-  radio.setPALevel(RF24_PA_LOW);  // RF24_PA_MAX is default.
+  radio.setPALevel(RF24_PA_MIN);  // RF24_PA_MAX is default.
 
   // save on transmission time by setting the radio to only transmit the
   // number of bytes we need to transmit a float
   radio.setPayloadSize(sizeof(payload)); // float datatype occupies 4 bytes
+
+  radio.setAutoAck(false);
 
   // set the TX address of the RX node into the TX pipe
   radio.openWritingPipe(address[radioNumber]);     // always uses pipe 0
@@ -86,9 +95,9 @@ void setup() {
   }
 
   // For debugging info
-  // printf_begin();             // needed only once for printing details
-  // radio.printDetails();       // (smaller) function that prints raw register values
-  // radio.printPrettyDetails(); // (larger) function that prints human readable data
+  printf_begin();             // needed only once for printing details
+  //radio.printDetails();       // (smaller) function that prints raw register values
+  radio.printPrettyDetails(); // (larger) function that prints human readable data
 
 } // setup
 
@@ -110,6 +119,8 @@ void loop() {
       payload += 0.01;                                       // increment float payload
     } else {
       Serial.println(F("Transmission failed or timed out")); // payload was not delivered
+      //radio.printPrettyDetails();
+      //radio.printDetails();
     }
 
     // to make this example readable in the serial monitor
@@ -140,7 +151,19 @@ void loop() {
 
       role = true;
       Serial.println(F("*** CHANGING TO TRANSMIT ROLE -- PRESS 'R' TO SWITCH BACK"));
+      
       radio.stopListening();
+      //delay(5);
+      //Serial.println("setting 1MBit");
+      //bool result = radio.setDataRate(RF24_1MBPS);
+      //Serial.print("radio.setDataRate(): "); Serial.println(result);
+      
+      //delay(5);
+      //radio.setPALevel(RF24_PA_HIGH);
+      //delay(5);
+      //radio.setChannel(120);
+      //delay(5);
+      //radio.setCRCLength(RF24_CRC_8);
 
     } else if (c == 'R' && role) {
       // Become the RX node
@@ -148,6 +171,16 @@ void loop() {
       role = false;
       Serial.println(F("*** CHANGING TO RECEIVE ROLE -- PRESS 'T' TO SWITCH BACK"));
       radio.startListening();
+      //delay(5);
+      //radio.setDataRate(RF24_1MBPS);
+      //delay(5);
+      //radio.setPALevel(RF24_PA_HIGH);
+      //delay(5);
+      //radio.setChannel(120);
+      //delay(5);      
+      //radio.setCRCLength(RF24_CRC_8);   
+    } else if (c == 'D') {
+      radio.printPrettyDetails();
     }
   }
 
