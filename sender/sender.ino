@@ -13,28 +13,34 @@
  *  
  */
 
-#include <SoftwareSerial.h>
-SoftwareSerial mySerial(4,2);
 
 #include "sender.h"
+
+// forward declarations
+void startCalibration();
+void stopCalibration();
+void dumpConfig();
+void calibrate();
+void startTransmitting();
+void stopTransmitting();
 
 // some arduino-specific stuff. We don't want to put that in the more generic receiver.h
 
 
 void error(const char* msg) {
-  mySerial.print("[ERROR] "); mySerial.println(msg);
+  Serial.print("[ERROR] "); Serial.println(msg);
 }
 
 void trace(const char* msg) {
-  mySerial.print("[TRACE] "); mySerial.println(msg);
+  Serial.print("[TRACE] "); Serial.println(msg);
 }
 
 void warning(const char* msg, int intvalue /*= -32768*/) { // display if other than -32768
-  mySerial.print("[WARNING] "); mySerial.print(msg);
+  Serial.print("[WARNING] "); Serial.print(msg);
   if (intvalue != -32768) {
-  mySerial.print(" - "); mySerial.print(intvalue); 
+  Serial.print(" - "); Serial.print(intvalue); 
   }
-  mySerial.println();
+  Serial.println();
 }
 
 // forward declaration for remote-control arduino application 
@@ -62,7 +68,7 @@ void transmitTaskHandler(int dt) {
 }
 
 void buttonCalibrateHandler(ButtonEvent event, Button& button) {
-  mySerial.println("button calibrate pressed");
+  Serial.println("button calibrate pressed");
   if ( !senderContext.CALIBRATING )
     startCalibration();
   else {
@@ -74,9 +80,8 @@ void buttonCalibrateHandler(ButtonEvent event, Button& button) {
 /* ---  Arduino-specific stuff --- */
 
 void setup() {
-  Serial.begin(9600); // used for RF comminication
-  mySerial.begin(38400); // used for serial monitoring
-  mySerial.println("sender: hello");
+  Serial.begin(57600); // used for serial monitoring
+  Serial.println("sender: hello");
   
   pinMode(CALIBRATION_PIN, INPUT);
   // initialize zero position in both axis
@@ -99,7 +104,7 @@ void loop() {
 
 void startCalibration() {
   stopTransmitting(); // make sure we're not transmitting
-  mySerial.println("started calibration");
+  Serial.println("started calibration");
   senderContext.CALIBRATING = true;
 
   senderContext.FB_ZERO = analogRead(FRONTBACK_PIN);
@@ -110,7 +115,7 @@ void startCalibration() {
 
 void stopCalibration() {
   senderContext.CALIBRATING = false;
-  mySerial.println("stopped calibration");
+  Serial.println("stopped calibration");
   dumpConfig();
   // TODO maybe we should have an explicit command of the user to start transmission
   startTransmitting();
@@ -125,12 +130,12 @@ void stopTransmitting() {
 }
 
 void dumpConfig() {
-  mySerial.print("FB_ZERO: "); mySerial.println(senderContext.FB_ZERO);
-  mySerial.print("LR_ZERO: "); mySerial.println(senderContext.LR_ZERO);
-  mySerial.print("LR_MAX: "); mySerial.println(senderContext.LR_MAX);
-  mySerial.print("LR_MIN: "); mySerial.println(senderContext.LR_MIN);
-  mySerial.print("FB_MAX: "); mySerial.println(senderContext.FB_MAX);
-  mySerial.print("FB_MIN: "); mySerial.println(senderContext.FB_MIN);
+  Serial.print("FB_ZERO: "); Serial.println(senderContext.FB_ZERO);
+  Serial.print("LR_ZERO: "); Serial.println(senderContext.LR_ZERO);
+  Serial.print("LR_MAX: "); Serial.println(senderContext.LR_MAX);
+  Serial.print("LR_MIN: "); Serial.println(senderContext.LR_MIN);
+  Serial.print("FB_MAX: "); Serial.println(senderContext.FB_MAX);
+  Serial.print("FB_MIN: "); Serial.println(senderContext.FB_MIN);
 
 }
 

@@ -190,8 +190,10 @@ void transmitPacket(Packet& packet) {
   byte crc = CRC8( (byte*)&packet, sizeof(packet));
   packet.crc = crc;
 
-  Serial.write((char*)&packet, sizeof(packet));
-  mySerial.print("M1 "); mySerial.print(packet.motor1); mySerial.print("  M2 "); mySerial.println(packet.motor2);
+  // TODO - DO send stuff
+  //Serial.write((char*)&packet, sizeof(packet));
+  
+  Serial.print("M1 "); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.println(packet.motor2);
   
   //Serial.print("fb: "); Serial.print(packet.fbNormalized); Serial.print(" - forward: "); Serial.println(bitRead(packet.bits,bit_FORWARD));
   //Serial.print("lr: "); Serial.print(packet.lrNormalized); Serial.print(" - right: "); Serial.println(bitRead(packet.bits,bit_RIGHT));
