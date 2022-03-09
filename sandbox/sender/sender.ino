@@ -29,12 +29,32 @@ bool radioNumber = 1; // 0 uses address[0] to transmit, 1 uses address[1] to tra
 // Used to control whether this node is sending or receiving
 bool role = false;  // true = TX role, false = RX role
 
+
+struct MyData {
+    float f;
+    float minusf;
+    
+    void println() {
+        Serial.print(f); Serial.print(" "); Serial.println(minusf);
+    }
+    
+    void next() {
+        f += 0.01;
+        minusf -= 0.01;
+    }
+};
+
 // For this example, we'll be using a payload containing
 // a single float number that will be incremented
 // on every successful transmission
-float payload = 0.0;
+MyData payload;
+
+
+
 
 void setup() {
+    
+  payload.f = 0.0f;
 
   Serial.begin(115200);
   while (!Serial) {
@@ -101,13 +121,14 @@ void setup() {
 
 } // setup
 
+
 void loop() {
 
   if (role) {
     // This device is a TX node
 
     unsigned long start_timer = micros();                    // start the timer
-    bool report = radio.write(&payload, sizeof(float));      // transmit & save the report
+    bool report = radio.write(&payload, sizeof(payload));      // transmit & save the report
     unsigned long end_timer = micros();                      // end the timer
 
     if (report) {
@@ -115,8 +136,8 @@ void loop() {
       Serial.print(F("Time to transmit = "));
       Serial.print(end_timer - start_timer);                 // print the timer result
       Serial.print(F(" us. Sent: "));
-      Serial.println(payload);                               // print payload sent
-      payload += 0.01;                                       // increment float payload
+      payload.println();
+      payload.next();                                       // increment float payload
     } else {
       Serial.println(F("Transmission failed or timed out")); // payload was not delivered
       //radio.printPrettyDetails();
@@ -138,7 +159,7 @@ void loop() {
       Serial.print(F(" bytes on pipe "));
       Serial.print(pipe);                     // print the pipe number
       Serial.print(F(": "));
-      Serial.println(payload);                // print the payload's value
+      payload.println();
     }
   } // role
 
