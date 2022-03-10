@@ -8,33 +8,23 @@
 #include "utils.h"
 
 
-#define MOTOR1_PIN 9
-#define MOTOR2_PIN 10
-#define MOTOR1DIR_PIN 7
-#define MOTOR2DIR_PIN 8
-
 #define PACKET_BUFFER_SIZE 10
 #define PACKET_SIZE sizeof(Packet)
 
 
 struct ReceiverContext {
-	bool newPacket = false; // this is set to 'true' by serialEvent(). Set it to 'false' loop to allow parsing of new packets
+	bool newPacket = false; // true when 'incomingPacket' has a new unprocessed packet
 	Packet incomingPacket;
 };
 
-extern ReceiverContext receiverContext; // global receiver state
-
+// forward declarations
 void checkReceived(ReceiverContext ctx);
 // from receiver.ino
 void onPacketDropped(Packet& droppedPacket);
 void onPacketReceived(Packet& packet);
 
 
-
-
-
 ReceiverContext receiverContext; // global receiver state
-
 
 
 bool verifyCrc(Packet& packet) {
@@ -51,20 +41,12 @@ bool verifyCrc(Packet& packet) {
 }
 
 
-/*
-void onPacketReceived(Packet& packet) {
-  analogWrite(MOTOR1_PIN, packet.motor1);
-  analogWrite(MOTOR2_PIN, packet.motor2);
-  digitalWrite(MOTOR1DIR_PIN, bitRead(packet.bits, packetbit_MOTOR1) );
-  digitalWrite(MOTOR2DIR_PIN, bitRead(packet.bits, packetbit_MOTOR2) );
-}
-*/
-
 // checks if there is any incoming packet ready for process and triggers its processing
 // is responsible for handling ReceiverContext.newPacket
 void checkReceived(ReceiverContext ctx) {
     int status = Rf::recv(ctx.incomingPacket);
     if (status > 0) {
+        receiverContext.newPacket = true;
 		onPacketReceived(ctx.incomingPacket);
 		receiverContext.newPacket = false;
 	} else

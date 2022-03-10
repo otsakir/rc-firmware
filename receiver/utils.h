@@ -2,11 +2,22 @@
 #define _UTILS_H_
 
 
-void error(const char* msg);
+void error(const char* msg) {
+  Serial.print("[ERROR] "); Serial.println(msg);
+}
 
-void trace(const char* msg);
+void trace(const char* msg) {
+  Serial.print("[TRACE] "); Serial.println(msg);
+}
 
-void warning(const char* msg, int intvalue/* = -32768*/);
+void warning(const char* msg, int intvalue /*= -32768*/) { // display if other than -32768
+  Serial.print("[WARNING] "); Serial.print(msg);
+  if (intvalue != -32768) {
+  Serial.print(" - "); Serial.print(intvalue); 
+  }
+  Serial.println();
+}
+
 
 
 // CRC-8 - based on the CRC8 formulas by Dallas/Maxim

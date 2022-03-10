@@ -22,16 +22,24 @@
 #define IS_VEHICLE !IS_RC
 #define RF_LEVEL RF24_PA_MIN
 
+// pin mapping
+#define FRONTBACK_PIN A0
+#define LEFTRIGHT_PIN A1
+#define CALIBRATION_PIN 3
+#define ZERO_THRESHOLD 20 // fb/lr threshold value under which it's considered zero. It's 10 from 255.
+#define TURN_FACTOR 1 // that's a factor affecting how quickly to turn
 // RF24 customizable pins
 #define CE_PIN 7
 #define CSN_PIN 8
 
+// RF24 address names
 namespace Rf {
     uint8_t sendAddress[6] = "1Node";
     uint8_t receiveAddress[6] = "2Node";
 }
 
 #include "sender.h"
+
 
 // forward declarations
 void startCalibration();
@@ -40,31 +48,7 @@ void dumpConfig();
 void calibrate();
 void startTransmitting();
 void stopTransmitting();
-
-
-
-
-// some arduino-specific stuff. We don't want to put that in the more generic receiver.h
-
-
-void error(const char* msg) {
-  Serial.print("[ERROR] "); Serial.println(msg);
-}
-
-void trace(const char* msg) {
-  Serial.print("[TRACE] "); Serial.println(msg);
-}
-
-void warning(const char* msg, int intvalue /*= -32768*/) { // display if other than -32768
-  Serial.print("[WARNING] "); Serial.print(msg);
-  if (intvalue != -32768) {
-  Serial.print(" - "); Serial.print(intvalue); 
-  }
-  Serial.println();
-}
-
-// forward declaration for remote-control arduino application 
-
+// handlers
 void buttonCalibrateHandler(ButtonEvent event, Button& button);
 void transmitTaskHandler(int dt);
 
@@ -131,8 +115,6 @@ void startCalibration() {
 
   senderContext.FB_ZERO = analogRead(FRONTBACK_PIN);
   senderContext.LR_ZERO = analogRead(LEFTRIGHT_PIN);   
-  //int FB_MAX,FB_MIN = FB_ZERO;  // TODO : what wasthis ?
-  //int LR_MAX, LR_MIN = LR_ZERO;
 }
 
 void stopCalibration() {

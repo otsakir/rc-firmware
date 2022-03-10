@@ -22,10 +22,16 @@
 #define IS_VEHICLE !IS_RC
 #define RF_LEVEL RF24_PA_MIN
 
+// pin mapping
+#define MOTOR1_PIN 9
+#define MOTOR2_PIN 10
+#define MOTOR1DIR_PIN 7 // ?
+#define MOTOR2DIR_PIN 8 // ?
 // RF24 customizable pins
-#define CE_PIN 7
-#define CSN_PIN 8
+#define CE_PIN 5
+#define CSN_PIN 6
 
+// RF24 addresses
 namespace Rf {
     uint8_t sendAddress[6] = "2Node";
     uint8_t receiveAddress[6] = "1Node";
@@ -33,22 +39,6 @@ namespace Rf {
 
 
 #include "receiver.h"
-
-void error(const char* msg) {
-  Serial.print("[ERROR] "); Serial.println(msg);
-}
-
-void trace(const char* msg) {
-  //Serial.print("[TRACE] "); Serial.println(msg);
-}
-
-void warning(const char* msg, int intvalue = -32768) { // display if other than -32768
-  Serial.print("[WARNING] "); Serial.print(msg);
-  if (intvalue != -32768) {
-  Serial.print(" - "); Serial.print(intvalue); 
-  }
-  Serial.println();
-}
 
 
 void setup() {

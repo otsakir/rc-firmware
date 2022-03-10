@@ -4,14 +4,15 @@
 #include "comm.h"
 #include "utils.h"
 
-// sender.h is about remote-control
 
-#define FRONTBACK_PIN A0
-#define LEFTRIGHT_PIN A1
-#define CALIBRATION_PIN 3
-#define ZERO_THRESHOLD 20 // fb/lr threshold value under which it's considered zero. It's 10 from 255.
-#define TURN_FACTOR 1 // that's a factor affecting how quickly to turn
-
+// Error messages are defined here. In case we run out of memory we can use smaller error descriptions like "E_31" etc.
+#define ERROR_LR_TOO_LOW "found LR value out of LR_MIN limit. Pushing limit down"
+#define ERROR_LR_TOO_HIGH "found LR value out of LR_MAX limit. Pushing limit up"
+#define ERROR_FB_TOO_LOW "found FB value out of FB_MIN limit. Pushing limit down"
+#define ERROR_FB_TOO_HIGH "found FB value out of FB_MAX limit. Pushing limit up"
+#define ERROR_PACKET_BUFFER_FULL "packet buffer full"
+#define ERROR_FEWER_BYTES_IN_BUFFER "too few bytes in buffer then expected"
+#define STRING_PACKET_CRC_CHECK_FAILED "Packet CRC check failed. Dropping packet"
 
 
 
@@ -110,6 +111,7 @@ void readSensors(SensorData& packet) {
   //mySerial.println();
 }
 
+// round  X,Y value to 0 if too small
 void applyZeroTolerance(SensorData& packet) {
   if (packet.fbNormalized < ZERO_THRESHOLD) {
     packet.fbNormalized = 0;
@@ -120,7 +122,6 @@ void applyZeroTolerance(SensorData& packet) {
     bitClear(packet.bits, sensorbit_LEFT);
   }
 }
-
 
 void buildPacket(SensorData& sensorData, Packet& packet) {
   packet.reset();
@@ -193,7 +194,6 @@ void transmitPacket(Packet& packet) {
   byte crc = CRC8( (byte*)&packet, sizeof(packet));
   packet.crc = crc;
 
-  // TODO - DO send stuff
   //Serial.write((char*)&packet, sizeof(packet));
   if (! Rf::send(packet) ) {
       Serial.println(F("Transmission failed or timed out"));
@@ -201,8 +201,6 @@ void transmitPacket(Packet& packet) {
       Serial.println("successfully sent");
       Serial.print("M1 "); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.println(packet.motor2);
   }
-  
-  
   
   //Serial.print("fb: "); Serial.print(packet.fbNormalized); Serial.print(" - forward: "); Serial.println(bitRead(packet.bits,bit_FORWARD));
   //Serial.print("lr: "); Serial.print(packet.lrNormalized); Serial.print(" - right: "); Serial.println(bitRead(packet.bits,bit_RIGHT));
