@@ -5,6 +5,7 @@
 #include "utils.h"
 
 
+
 // Error messages are defined here. In case we run out of memory we can use smaller error descriptions like "E_31" etc.
 #define ERROR_LR_TOO_LOW "found LR value out of LR_MIN limit. Pushing limit down"
 #define ERROR_LR_TOO_HIGH "found LR value out of LR_MAX limit. Pushing limit up"
@@ -36,18 +37,90 @@ struct SensorData {
   }  
 };
 
+struct CalibrationInfo {
+  int FB_ZERO = 1024/2; // sensible defaults
+  int LR_ZERO = 1024/2; // sensible defaults
+  int FB_MAX = 1024/2;
+  int FB_MIN = 1024/2;
+  int LR_MAX = 1024/2;
+  int LR_MIN = 1024/2;
+  
+  void dump(Stream& serial) {
+	  serial.print("FB_ZERO: "); serial.println(FB_ZERO);
+	  serial.print("LR_ZERO: "); serial.println(LR_ZERO);
+	  serial.print("FB_MAX: "); serial.println(FB_MAX);
+	  serial.print("FB_MIN: "); serial.println(FB_MIN);
+	  serial.print("LR_MAX: "); serial.println(LR_MAX);
+	  serial.print("LR_MIN: "); serial.println(LR_MIN);
+  }
+};
+
 struct SenderContext {
-  bool CALIBRATING = false; // read-only value. should not be edited directly. Only through start/stopCalibration.
+  bool CALIBRATING; // read-only value. should not be edited directly. Only through start/stopCalibration.
   bool TRANSMITTING = false;
   SensorData sensorData;
   Packet packet;
-
-  int FB_ZERO = 1024/2; // sensible defaults
-  int LR_ZERO = 1024/2; // sensible defaults
-  int FB_MAX,FB_MIN = FB_ZERO; 
-  int LR_MAX, LR_MIN = LR_ZERO;  
-  
+  CalibrationInfo calInfo;  
 };
+
+
+// EEPROM
+#define EEPROM_SCHEMA_VERSION 1
+#define EEPROM_STATUS_BIT_CALIBRATED 0
+
+
+struct EepromContent {
+	unsigned char signature = 255; // by default != 'G' i.e. not initialized
+	unsigned char version;
+	unsigned char status;
+	CalibrationInfo calibrationInfo;
+	
+};
+
+struct EepromTool {
+	
+	EepromContent eepromContent;
+		
+	// load raw contents to RAM ,initialized and stores them. Always call when application starts
+	void init() {
+		EEPROM.get(0, eepromContent);
+		if (eepromContent.signature != 'G') {
+			eepromContent.signature = 'G';
+			eepromContent.status = 0;
+			bitClear(eepromContent.status, EEPROM_STATUS_BIT_CALIBRATED);
+			// won't set calibrationInfo
+			EEPROM.put(0, eepromContent);
+			Serial.println("Initialized EEPROM");
+		}
+	}
+	
+	bool isCalibrated() {
+		return bitRead(eepromContent.status, EEPROM_STATUS_BIT_CALIBRATED);
+	}
+	
+	bool saveCalibration(const CalibrationInfo& calInfo) {
+		if (eepromContent.signature == 'G') {
+			eepromContent.calibrationInfo = calInfo;
+			bitSet(eepromContent.status, EEPROM_STATUS_BIT_CALIBRATED);
+			EEPROM.put(0, eepromContent);
+			Serial.println("Saved contents to EEPROM");
+			return true;
+		} else  {
+			return false;
+		}
+		
+	}
+	
+	bool loadCalibration(CalibrationInfo& calInfo) {
+		if (eepromContent.signature == 'G' && bitRead(eepromContent.status, EEPROM_STATUS_BIT_CALIBRATED)) {
+			EEPROM.get((char*)&eepromContent.calibrationInfo - (char*)&eepromContent, eepromContent.calibrationInfo);
+			return true;
+		}
+		return false;
+	}
+	
+};
+
 
 
 // reads sensor values and bundle then in SensorData
@@ -70,36 +143,36 @@ void readSensors(SensorData& packet) {
   long lr = analogRead(LEFTRIGHT_PIN); 
 
   packet.bits = 0;
-  if (fb >= senderContext.FB_ZERO) {
-    if (fb > senderContext.FB_MAX) {
+  if (fb >= senderContext.calInfo.FB_ZERO) {
+    if (fb > senderContext.calInfo.FB_MAX) {
       error(ERROR_FB_TOO_HIGH);
-      senderContext.FB_MAX = fb;
+      senderContext.calInfo.FB_MAX = fb;
     }
-    packet.fbNormalized = ((long)(fb - senderContext.FB_ZERO)) * 255 / (senderContext.FB_MAX - senderContext.FB_ZERO);
+    packet.fbNormalized = ((long)(fb - senderContext.calInfo.FB_ZERO)) * 255 / (senderContext.calInfo.FB_MAX - senderContext.calInfo.FB_ZERO);
     bitClear(packet.bits, sensorbit_BACKWARD);
   } else
-  if (fb < senderContext.FB_ZERO) {
-    if (fb < senderContext.FB_MIN) {
+  if (fb < senderContext.calInfo.FB_ZERO) {
+    if (fb < senderContext.calInfo.FB_MIN) {
       error(ERROR_FB_TOO_LOW);
-      senderContext.FB_MIN = fb;
+      senderContext.calInfo.FB_MIN = fb;
     }
-    packet.fbNormalized = ((long)(senderContext.FB_ZERO - fb)) * 255 / (senderContext.FB_ZERO - senderContext.FB_MIN);
+    packet.fbNormalized = ((long)(senderContext.calInfo.FB_ZERO - fb)) * 255 / (senderContext.calInfo.FB_ZERO - senderContext.calInfo.FB_MIN);
     bitSet(packet.bits, sensorbit_BACKWARD);
   }
-  if (lr >= senderContext.LR_ZERO) {
-    if (lr > senderContext.LR_MAX) {
+  if (lr >= senderContext.calInfo.LR_ZERO) {
+    if (lr > senderContext.calInfo.LR_MAX) {
       error(ERROR_LR_TOO_HIGH);
-      senderContext.LR_MAX = lr;
+      senderContext.calInfo.LR_MAX = lr;
     }
-    packet.lrNormalized = ((long)(lr - senderContext.LR_ZERO)) * 255 / (senderContext.LR_MAX - senderContext.LR_ZERO);
+    packet.lrNormalized = ((long)(lr - senderContext.calInfo.LR_ZERO)) * 255 / (senderContext.calInfo.LR_MAX - senderContext.calInfo.LR_ZERO);
     bitSet(packet.bits, sensorbit_LEFT);
   } else
-  if (lr < senderContext.LR_ZERO) {
-    if (lr < senderContext.LR_MIN) {
+  if (lr < senderContext.calInfo.LR_ZERO) {
+    if (lr < senderContext.calInfo.LR_MIN) {
       error(ERROR_LR_TOO_LOW);
-      senderContext.LR_MIN = lr;
+      senderContext.calInfo.LR_MIN = lr;
     }
-    packet.lrNormalized = ((long)(senderContext.LR_ZERO - lr)) * 255 / (senderContext.LR_ZERO - senderContext.LR_MIN);
+    packet.lrNormalized = ((long)(senderContext.calInfo.LR_ZERO - lr)) * 255 / (senderContext.calInfo.LR_ZERO - senderContext.calInfo.LR_MIN);
     bitClear(packet.bits, sensorbit_LEFT);
   }
   // TODO read horn and breaks buttons. For now, set them both to true - 1  
@@ -198,14 +271,15 @@ void transmitPacket(Packet& packet) {
   if (! Rf::send(packet) ) {
       Serial.println(F("Transmission failed or timed out"));
   } else {
-      Serial.println("successfully sent");
-      Serial.print("M1 "); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.println(packet.motor2);
+      //Serial.println("successfully sent");
+      //Serial.print("M1 "); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.println(packet.motor2);
   }
   
   //Serial.print("fb: "); Serial.print(packet.fbNormalized); Serial.print(" - forward: "); Serial.println(bitRead(packet.bits,bit_FORWARD));
   //Serial.print("lr: "); Serial.print(packet.lrNormalized); Serial.print(" - right: "); Serial.println(bitRead(packet.bits,bit_RIGHT));
   //Serial.print("CRC8: "); Serial.println(crc);
 }
+
 
 
 #endif

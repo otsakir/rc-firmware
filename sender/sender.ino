@@ -4,6 +4,7 @@
 #include <SPI.h>
 #include "printf.h"
 #include "RF24.h"
+#include <EEPROM.h>
 
 /*  Ports used 
  *  
@@ -44,7 +45,6 @@ namespace Rf {
 // forward declarations
 void startCalibration();
 void stopCalibration();
-void dumpConfig();
 void calibrate();
 void startTransmitting();
 void stopTransmitting();
@@ -77,20 +77,32 @@ void buttonCalibrateHandler(ButtonEvent event, Button& button) {
     startCalibration();
   else {
     stopCalibration();
-    dumpConfig();
+    senderContext.calInfo.dump(Serial);
   }
 }
 
-/* ---  Arduino-specific stuff --- */
+EepromTool eepromTool;
 
+
+/* ---  Arduino-specific stuff --- */
 void setup() {
   Serial.begin(57600); // used for serial monitoring
   Serial.println("sender: hello");
-  
   pinMode(CALIBRATION_PIN, INPUT);
-  // initialize zero position in both axis
-  senderContext.FB_ZERO = analogRead(FRONTBACK_PIN);
-  senderContext.LR_ZERO = analogRead(LEFTRIGHT_PIN); 
+  eepromTool.init();
+  bool calibrated = eepromTool.isCalibrated();
+  Serial.print("isCalibrated: "); Serial.println(calibrated);
+  if (calibrated) {
+	eepromTool.eepromContent.calibrationInfo.dump(Serial);
+	senderContext.calInfo = eepromTool.eepromContent.calibrationInfo;
+	senderContext.CALIBRATING = false;
+	startTransmitting();
+  } else {
+	  // initialize zero position in both axis
+	  senderContext.calInfo.FB_ZERO = analogRead(FRONTBACK_PIN);
+	  senderContext.calInfo.LR_ZERO = analogRead(LEFTRIGHT_PIN); 
+	  senderContext.CALIBRATING = true;
+  }
   
   Rf::init();
   
@@ -113,14 +125,19 @@ void startCalibration() {
   Serial.println("started calibration");
   senderContext.CALIBRATING = true;
 
-  senderContext.FB_ZERO = analogRead(FRONTBACK_PIN);
-  senderContext.LR_ZERO = analogRead(LEFTRIGHT_PIN);   
+  senderContext.calInfo.FB_ZERO = analogRead(FRONTBACK_PIN);
+  senderContext.calInfo.LR_ZERO = analogRead(LEFTRIGHT_PIN); 
+  senderContext.calInfo.FB_MIN = senderContext.calInfo.FB_ZERO;
+  senderContext.calInfo.FB_MAX = senderContext.calInfo.FB_ZERO;
+  senderContext.calInfo.LR_MIN = senderContext.calInfo.LR_ZERO;
+  senderContext.calInfo.LR_MAX = senderContext.calInfo.LR_ZERO;
 }
 
 void stopCalibration() {
   senderContext.CALIBRATING = false;
   Serial.println("stopped calibration");
-  dumpConfig();
+  eepromTool.saveCalibration(senderContext.calInfo);
+  senderContext.calInfo.dump(Serial);
   // TODO maybe we should have an explicit command of the user to start transmission
   startTransmitting();
 }
@@ -133,22 +150,12 @@ void stopTransmitting() {
   senderContext.TRANSMITTING = false;
 }
 
-void dumpConfig() {
-  Serial.print("FB_ZERO: "); Serial.println(senderContext.FB_ZERO);
-  Serial.print("LR_ZERO: "); Serial.println(senderContext.LR_ZERO);
-  Serial.print("LR_MAX: "); Serial.println(senderContext.LR_MAX);
-  Serial.print("LR_MIN: "); Serial.println(senderContext.LR_MIN);
-  Serial.print("FB_MAX: "); Serial.println(senderContext.FB_MAX);
-  Serial.print("FB_MIN: "); Serial.println(senderContext.FB_MIN);
-
-}
-
 // setup *_MAX,*_MIN calibration limits. Keep calling this while moving the stick to possible positions.
 void calibrate() {
   int fb = analogRead(FRONTBACK_PIN);
   int lr = analogRead(LEFTRIGHT_PIN);  
-  senderContext.FB_MAX = fb > senderContext.FB_MAX ? fb : senderContext.FB_MAX;
-  senderContext.FB_MIN = fb < senderContext.FB_MIN ? fb : senderContext.FB_MIN;
-  senderContext.LR_MAX = lr > senderContext.LR_MAX ? lr : senderContext.LR_MAX;
-  senderContext.LR_MIN = lr < senderContext.LR_MIN ? lr : senderContext.LR_MIN;
+  senderContext.calInfo.FB_MAX = fb > senderContext.calInfo.FB_MAX ? fb : senderContext.calInfo.FB_MAX;
+  senderContext.calInfo.FB_MIN = fb < senderContext.calInfo.FB_MIN ? fb : senderContext.calInfo.FB_MIN;
+  senderContext.calInfo.LR_MAX = lr > senderContext.calInfo.LR_MAX ? lr : senderContext.calInfo.LR_MAX;
+  senderContext.calInfo.LR_MIN = lr < senderContext.calInfo.LR_MIN ? lr : senderContext.calInfo.LR_MIN;
 }
