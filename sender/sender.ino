@@ -77,7 +77,7 @@ void buttonCalibrateHandler(ButtonEvent event, Button& button) {
     startCalibration();
   else {
     stopCalibration();
-    senderContext.calInfo.dump(Serial);
+    //senderContext.calInfo.dump(Serial);
   }
 }
 
@@ -103,6 +103,7 @@ void setup() {
 	  senderContext.calInfo.LR_ZERO = analogRead(LEFTRIGHT_PIN); 
 	  senderContext.CALIBRATING = true;
   }
+  senderContext.senderPacketIndex = 0; 
   
   Rf::init();
   

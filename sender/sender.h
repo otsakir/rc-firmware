@@ -46,6 +46,7 @@ struct CalibrationInfo {
   int LR_MIN = 1024/2;
   
   void dump(Stream& serial) {
+	  serial.println("--- Calibration info ---");
 	  serial.print("FB_ZERO: "); serial.println(FB_ZERO);
 	  serial.print("LR_ZERO: "); serial.println(LR_ZERO);
 	  serial.print("FB_MAX: "); serial.println(FB_MAX);
@@ -61,6 +62,7 @@ struct SenderContext {
   SensorData sensorData;
   Packet packet;
   CalibrationInfo calInfo;  
+  unsigned char senderPacketIndex; // a steadily increased integer identifying outgoing packets. Holds index of last sent packet. To send, increase it and use this  increased value in the sent packet.
 };
 
 
@@ -254,15 +256,19 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
   }
   bitWrite(packet.bits, packetbit_MOTOR1, motor1dir);
   bitWrite(packet.bits, packetbit_MOTOR2, motor2dir);
+  
 
   //mySerial.print("fb: "); mySerial.print(sensorData.fbNormalized); mySerial.print("\tlr: "); mySerial.print(sensorData.lrNormalized); mySerial.println();
   //mySerial.print("motor1: "); mySerial.print(packet.motor1); mySerial.print("\t direction: "); mySerial.print(bitRead(packet.bits, packetbit_MOTOR1)); mySerial.println();
   //mySerial.print("motor2: "); mySerial.print(packet.motor2); mySerial.print("\t direction: "); mySerial.print(bitRead(packet.bits, packetbit_MOTOR2)); mySerial.println("\n");
-  
 }
 
 
 void transmitPacket(Packet& packet) {
+  // set packet index
+  senderContext.senderPacketIndex ++;
+  packet.index = senderContext.senderPacketIndex;
+	
   packet.crc = 0; // reseting this since it should not be taken into account when calculating CRC. 
   byte crc = CRC8( (byte*)&packet, sizeof(packet));
   packet.crc = crc;

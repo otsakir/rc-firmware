@@ -69,7 +69,7 @@ void onPacketDropped(Packet& droppedPacket) {
 }
 
 void onPacketReceived(Packet& packet) {
-  Serial.print("Packet received: ");
+  Serial.print("Packet received("); Serial.print(packet.index); Serial.print("): ");
   bool dir1 = bitRead(packet.bits, packetbit_MOTOR1);
   bool dir2 = bitRead(packet.bits, packetbit_MOTOR2);
   Serial.print("M1 "); Serial.print(dir1 ? "-" : "+"); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.print(dir2 ? "-" : "+"); Serial.println(packet.motor2);
