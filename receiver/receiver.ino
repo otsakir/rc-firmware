@@ -5,11 +5,13 @@
 
 
 /*  Ports used 
- *  
- *  TX - sender board RX
- *  RX - sender board TX
- *  D4 - external serial board/TX
- *  D2 - external serial board/RX
+ *
+ *  D13 - SCK (RF24/6)
+ *  D12 - MISO (RF24/5)
+ *  D11 - MOSI (RF24/3)
+ *  D6 - CSN (RF24/2)
+ *  D5 - CE (RF24/7)
+ * 
  *  D7 - motor1 dir
  *  D8 - motor2 dir
  *  D9 - motor1 throttle

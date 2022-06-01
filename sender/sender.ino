@@ -8,13 +8,16 @@
 
 /*  Ports used 
  *  
- *  TX - other board RX
- *  RX - other board TX
- *  D4 - external serial board/TX
- *  D2 - external serial board/RX
  *  D3 - calibration button
  *  A0 - joystick front/back input
  *  A1 - joystick left/right input
+ * 
+ *  D13 - SCK (RF24/6)
+ *  D12 - MISO (RF24/5)
+ *  D11 - MOSI (RF24/3)
+ *  D8 - CSN (RF24/2)
+ *  D7 - CE (RF24/7)
+ *  D3 - Calibration button
  *  
  */
 
