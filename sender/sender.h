@@ -28,11 +28,13 @@
 struct SensorData {
   unsigned short fbNormalized;
   unsigned short lrNormalized;
+  unsigned int a2;
   unsigned char bits;
 
   SensorData() {
     fbNormalized = 0;
     lrNormalized = 0;
+    a2 = 0;
     bits = 0;
   }  
 };
@@ -139,11 +141,12 @@ SenderContext senderContext;
 // --- Implementation ---
 
 
-// reads sensor values and bundle then in SensorData
+// reads sensor values and bundle them in SensorData
 void readSensors(SensorData& packet) {
   long fb = analogRead(FRONTBACK_PIN);
   long lr = analogRead(LEFTRIGHT_PIN); 
-
+  
+  packet.a2 = analogRead(A2);
   packet.bits = 0;
   if (fb >= senderContext.calInfo.FB_ZERO) {
     if (fb > senderContext.calInfo.FB_MAX) {
@@ -256,6 +259,8 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
   }
   bitWrite(packet.bits, packetbit_MOTOR1, motor1dir);
   bitWrite(packet.bits, packetbit_MOTOR2, motor2dir);
+
+  packet.a2 = sensorData.a2;
   
 
   //mySerial.print("fb: "); mySerial.print(sensorData.fbNormalized); mySerial.print("\tlr: "); mySerial.print(sensorData.lrNormalized); mySerial.println();

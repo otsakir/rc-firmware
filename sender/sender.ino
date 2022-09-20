@@ -60,7 +60,7 @@ void transmitTaskHandler(int dt);
 // BUTTON_PRESS - fire when button is actually released
 Button buttonCalibrate(3, BUTTON_PRESS, buttonCalibrateHandler);
 // transmit every 1000 msec
-PeriodicTask transmitTask(10, transmitTaskHandler);
+PeriodicTask transmitTask(500, transmitTaskHandler);
 
 
 /* --- Handlers --- */

@@ -17,17 +17,16 @@ struct Packet {
   unsigned char motor2; // right motor
   unsigned char bits;
   unsigned char index;  // increased by one for each different packet sent.
+  unsigned int a2;    // the value fro the analog port A2. Not sure what to name it.
   byte crc;
 
-  Packet() : Packet(0,0,0,0,0) {
-  }
-  
-  Packet(unsigned char m1, unsigned char m2, unsigned char b, unsigned char i, byte c) {
-	  motor1 = m1;
-	  motor2 = m2;
-	  bits = b;
-	  index = i;
-	  crc = c;
+  Packet() {
+    motor1 = 0;
+    motor2 = 0;
+    bits = 0;
+    index = 0;
+    a2 = 0;
+    crc = 0;
   }
 
   void reset() {
@@ -35,6 +34,7 @@ struct Packet {
     motor2 = 0;
     bits = 0;
     index = 0;
+    a2 = 0;
     crc = 0;    
   }
   

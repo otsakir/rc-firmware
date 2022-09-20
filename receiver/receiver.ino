@@ -74,7 +74,7 @@ void onPacketReceived(Packet& packet) {
   Serial.print("Packet received("); Serial.print(packet.index); Serial.print("): ");
   bool dir1 = bitRead(packet.bits, packetbit_MOTOR1);
   bool dir2 = bitRead(packet.bits, packetbit_MOTOR2);
-  Serial.print("M1 "); Serial.print(dir1 ? "-" : "+"); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.print(dir2 ? "-" : "+"); Serial.println(packet.motor2);
+  Serial.print("M1 "); Serial.print(dir1 ? "-" : "+"); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.print(dir2 ? "-" : "+"); Serial.print(packet.motor2); Serial.print("  A2: "); Serial.println(packet.a2);
 /*  analogWrite(MOTOR1_PIN, packet.motor1);
   analogWrite(MOTOR2_PIN, packet.motor2);
   digitalWrite(MOTOR1DIR_PIN, dir1);
