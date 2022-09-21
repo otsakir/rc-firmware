@@ -205,6 +205,7 @@ void applyZeroTolerance(SensorData& packet) {
   }
 }
 
+// note, it also used senderContext
 void buildPacket(SensorData& sensorData, Packet& packet) {
   packet.reset();
   bool backward = bitRead(sensorData.bits, sensorbit_BACKWARD);
@@ -265,6 +266,11 @@ void buildPacket(SensorData& sensorData, Packet& packet) {
   bitWrite(packet.bits, packetbit_MOTOR2, motor2dir);
 
   packet.a2 = sensorData.a2;
+
+  bitWrite(packet.bits, packetbit_PAIRBUTTON_1A, senderContext.pairbutton1A);
+  bitWrite(packet.bits, packetbit_PAIRBUTTON_1B, senderContext.pairbutton1B);
+  bitWrite(packet.bits, packetbit_PAIRBUTTON_2A, senderContext.pairbutton2A);
+  bitWrite(packet.bits, packetbit_PAIRBUTTON_2B, senderContext.pairbutton2B);
   
 
   //mySerial.print("fb: "); mySerial.print(sensorData.fbNormalized); mySerial.print("\tlr: "); mySerial.print(sensorData.lrNormalized); mySerial.println();

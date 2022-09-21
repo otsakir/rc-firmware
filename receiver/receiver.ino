@@ -74,7 +74,13 @@ void onPacketReceived(Packet& packet) {
   Serial.print("Packet received("); Serial.print(packet.index); Serial.print("): ");
   bool dir1 = bitRead(packet.bits, packetbit_MOTOR1);
   bool dir2 = bitRead(packet.bits, packetbit_MOTOR2);
-  Serial.print("M1 "); Serial.print(dir1 ? "-" : "+"); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.print(dir2 ? "-" : "+"); Serial.print(packet.motor2); Serial.print("  A2: "); Serial.println(packet.a2);
+  bool pairbutton1A = bitRead(packet.bits, packetbit_PAIRBUTTON_1A);
+  bool pairbutton1B = bitRead(packet.bits, packetbit_PAIRBUTTON_1B);
+  bool pairbutton2A = bitRead(packet.bits, packetbit_PAIRBUTTON_2A);
+  bool pairbutton2B = bitRead(packet.bits, packetbit_PAIRBUTTON_2B);
+  
+  Serial.print("M1 "); Serial.print(dir1 ? "-" : "+"); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.print(dir2 ? "-" : "+"); Serial.print(packet.motor2); Serial.print("  A2: "); Serial.print(packet.a2);
+  Serial.print(" pairbutton 1A: "); Serial.print(pairbutton1A); Serial.print(" 1B: "); Serial.print(pairbutton1B); Serial.print(" 2A: "); Serial.print(pairbutton2A); Serial.print(" 2B: "); Serial.print(pairbutton2B); Serial.println();
 /*  analogWrite(MOTOR1_PIN, packet.motor1);
   analogWrite(MOTOR2_PIN, packet.motor2);
   digitalWrite(MOTOR1DIR_PIN, dir1);

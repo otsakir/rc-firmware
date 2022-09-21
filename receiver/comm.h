@@ -10,6 +10,11 @@
 #define packetbit_BREAKS 1
 #define packetbit_MOTOR1 2  // left one .Reverse motor 1 direction.
 #define packetbit_MOTOR2 3  // right one
+#define packetbit_PAIRBUTTON_1A 4
+#define packetbit_PAIRBUTTON_1B 5
+#define packetbit_PAIRBUTTON_2A 6
+#define packetbit_PAIRBUTTON_2B 7
+
 
 
 struct Packet {
