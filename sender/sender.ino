@@ -32,6 +32,10 @@
 #define CALIBRATION_PIN 3
 #define ZERO_THRESHOLD 20 // fb/lr threshold value under which it's considered zero. It's 10 from 255.
 #define TURN_FACTOR 1 // that's a factor affecting how quickly to turn
+#define PAIRBUTTON_1A_PIN 2
+#define PAIRBUTTON_1B_PIN 4
+#define PAIRBUTTON_2A_PIN 5
+#define PAIRBUTTON_2B_PIN 6
 // RF24 customizable pins
 #define CE_PIN 7
 #define CSN_PIN 8
@@ -74,6 +78,7 @@ void transmitTaskHandler(int dt) {
   }
 }
 
+
 void buttonCalibrateHandler(ButtonEvent event, Button& button) {
   Serial.println("button calibrate pressed");
   if ( !senderContext.CALIBRATING )
@@ -84,22 +89,71 @@ void buttonCalibrateHandler(ButtonEvent event, Button& button) {
   }
 }
 
+void updatePairbuttons(SenderContext& senderContext) {
+  
+  // only check 1A if the other (1B) is not pressed
+  
+  int status1A = digitalRead(PAIRBUTTON_1A_PIN);
+  int status1B = digitalRead(PAIRBUTTON_1B_PIN);
+  
+  if ( status1A && !senderContext.pairbutton1B) { 
+    senderContext.pairbutton1A = status1A;
+  } else
+    senderContext.pairbutton1A = LOW;
+
+  if (status1B && !senderContext.pairbutton1A) {
+    senderContext.pairbutton1B = status1B;
+  } else
+    senderContext.pairbutton1B = LOW;
+  
+  Serial.print("1A: "); Serial.print(senderContext.pairbutton1A);
+  Serial.print("  1B: "); Serial.print(senderContext.pairbutton1B);
+  
+  
+  int status2A = digitalRead(PAIRBUTTON_2A_PIN);
+  int status2B = digitalRead(PAIRBUTTON_2B_PIN);
+  
+  if ( status2A && !senderContext.pairbutton2B) { 
+    senderContext.pairbutton2A = status2A;
+  } else
+    senderContext.pairbutton2A = LOW;
+
+  if (status2B && !senderContext.pairbutton2A) {
+    senderContext.pairbutton2B = status2B;
+  } else
+    senderContext.pairbutton2B = LOW;
+  
+  Serial.print(" 2A: "); Serial.print(senderContext.pairbutton2A);
+  Serial.print("  2B: "); Serial.print(senderContext.pairbutton2B);
+  Serial.println();   
+  
+}
+
 EepromTool eepromTool;
 
 
 /* ---  Arduino-specific stuff --- */
 void setup() {
+  
   Serial.begin(57600); // used for serial monitoring
   Serial.println("sender: hello");
+  
+  // pairbuttons
+  pinMode(PAIRBUTTON_1A_PIN, INPUT);
+  pinMode(PAIRBUTTON_1B_PIN, INPUT);
+  pinMode(PAIRBUTTON_2A_PIN, INPUT);
+  pinMode(PAIRBUTTON_2B_PIN, INPUT);
+  
+  // calibration and EEPROM
   pinMode(CALIBRATION_PIN, INPUT);
   eepromTool.init();
   bool calibrated = eepromTool.isCalibrated();
   Serial.print("isCalibrated: "); Serial.println(calibrated);
   if (calibrated) {
-	eepromTool.eepromContent.calibrationInfo.dump(Serial);
-	senderContext.calInfo = eepromTool.eepromContent.calibrationInfo;
-	senderContext.CALIBRATING = false;
-	startTransmitting();
+  	eepromTool.eepromContent.calibrationInfo.dump(Serial);
+  	senderContext.calInfo = eepromTool.eepromContent.calibrationInfo;
+  	senderContext.CALIBRATING = false;
+  	startTransmitting();
   } else {
 	  // initialize zero position in both axis
 	  senderContext.calInfo.FB_ZERO = analogRead(FRONTBACK_PIN);
@@ -108,6 +162,7 @@ void setup() {
   }
   senderContext.senderPacketIndex = 0; 
   
+  // RF24
   Rf::init();
   
 }
@@ -115,6 +170,7 @@ void setup() {
 void loop() {
   // check if buttonCalibrate is pressed and trigger its handler if it is
   buttonCalibrate.update();
+  updatePairbuttons(senderContext);
   // update calibration limits FB_MAX, FB_MIN, LR_MAX, LR_MIN
   if ( senderContext.CALIBRATING )
     calibrate();

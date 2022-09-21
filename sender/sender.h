@@ -65,6 +65,10 @@ struct SenderContext {
   Packet packet;
   CalibrationInfo calInfo;  
   unsigned char senderPacketIndex; // a steadily increased integer identifying outgoing packets. Holds index of last sent packet. To send, increase it and use this  increased value in the sent packet.
+  bool pairbutton1A;
+  bool pairbutton1B;
+  bool pairbutton2A;
+  bool pairbutton2B;
 };
 
 
