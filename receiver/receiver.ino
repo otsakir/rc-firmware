@@ -29,6 +29,10 @@
 #define MOTOR2_PIN 10
 #define MOTOR1DIR_PIN 7 // ?
 #define MOTOR2DIR_PIN 8 // ?
+#define PAIRBUTTON_1A_OUT_PIN A3
+#define PAIRBUTTON_1B_OUT_PIN A4
+#define PAIRBUTTON_2A_OUT_PIN A0
+#define PAIRBUTTON_2B_OUT_PIN A1
 // RF24 customizable pins
 #define CE_PIN 5
 #define CSN_PIN 6
@@ -52,7 +56,11 @@ void setup() {
   pinMode(MOTOR2_PIN, OUTPUT);
   pinMode(MOTOR1DIR_PIN,OUTPUT);
   pinMode(MOTOR2DIR_PIN, OUTPUT);
-  
+  pinMode(PAIRBUTTON_1A_OUT_PIN, OUTPUT);
+  pinMode(PAIRBUTTON_1B_OUT_PIN, OUTPUT);
+  pinMode(PAIRBUTTON_2A_OUT_PIN, OUTPUT);
+  pinMode(PAIRBUTTON_2B_OUT_PIN, OUTPUT);
+
   Rf::init();  
 }
 
@@ -85,4 +93,9 @@ void onPacketReceived(Packet& packet) {
   analogWrite(MOTOR2_PIN, packet.motor2);
   digitalWrite(MOTOR1DIR_PIN, dir1);
   digitalWrite(MOTOR2DIR_PIN, dir2);*/
+  digitalWrite(PAIRBUTTON_1A_OUT_PIN, pairbutton1A);
+  digitalWrite(PAIRBUTTON_1B_OUT_PIN, pairbutton1B);
+  digitalWrite(PAIRBUTTON_2A_OUT_PIN, pairbutton2A);
+  digitalWrite(PAIRBUTTON_2B_OUT_PIN, pairbutton2B);
+    
 }
