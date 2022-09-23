@@ -89,10 +89,10 @@ void onPacketReceived(Packet& packet) {
   
   Serial.print("M1 "); Serial.print(dir1 ? "-" : "+"); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.print(dir2 ? "-" : "+"); Serial.print(packet.motor2); Serial.print("  A2: "); Serial.print(packet.a2);
   Serial.print(" pairbutton 1A: "); Serial.print(pairbutton1A); Serial.print(" 1B: "); Serial.print(pairbutton1B); Serial.print(" 2A: "); Serial.print(pairbutton2A); Serial.print(" 2B: "); Serial.print(pairbutton2B); Serial.println();
-/*  analogWrite(MOTOR1_PIN, packet.motor1);
+  analogWrite(MOTOR1_PIN, packet.motor1);
   analogWrite(MOTOR2_PIN, packet.motor2);
   digitalWrite(MOTOR1DIR_PIN, dir1);
-  digitalWrite(MOTOR2DIR_PIN, dir2);*/
+  digitalWrite(MOTOR2DIR_PIN, dir2);
   digitalWrite(PAIRBUTTON_1A_OUT_PIN, pairbutton1A);
   digitalWrite(PAIRBUTTON_1B_OUT_PIN, pairbutton1B);
   digitalWrite(PAIRBUTTON_2A_OUT_PIN, pairbutton2A);
