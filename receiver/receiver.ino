@@ -33,6 +33,7 @@
 #define PAIRBUTTON_1B_OUT_PIN A4
 #define PAIRBUTTON_2A_OUT_PIN A0
 #define PAIRBUTTON_2B_OUT_PIN A1
+#define A2_PWM_PIN 3
 // RF24 customizable pins
 #define CE_PIN 5
 #define CSN_PIN 6
@@ -60,6 +61,7 @@ void setup() {
   pinMode(PAIRBUTTON_1B_OUT_PIN, OUTPUT);
   pinMode(PAIRBUTTON_2A_OUT_PIN, OUTPUT);
   pinMode(PAIRBUTTON_2B_OUT_PIN, OUTPUT);
+  pinMode( A2_PWM_PIN, OUTPUT);
 
   Rf::init();  
 }
@@ -86,8 +88,9 @@ void onPacketReceived(Packet& packet) {
   bool pairbutton1B = bitRead(packet.bits, packetbit_PAIRBUTTON_1B);
   bool pairbutton2A = bitRead(packet.bits, packetbit_PAIRBUTTON_2A);
   bool pairbutton2B = bitRead(packet.bits, packetbit_PAIRBUTTON_2B);
+  unsigned char a2_pwm = (packet.a2 >> 2) & 0xFF; // only keep byte sized info
   
-  Serial.print("M1 "); Serial.print(dir1 ? "-" : "+"); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.print(dir2 ? "-" : "+"); Serial.print(packet.motor2); Serial.print("  A2: "); Serial.print(packet.a2);
+  Serial.print("M1 "); Serial.print(dir1 ? "-" : "+"); Serial.print(packet.motor1); Serial.print("  M2 "); Serial.print(dir2 ? "-" : "+"); Serial.print(packet.motor2); Serial.print("  A2 (pwm): "); Serial.print(a2_pwm);
   Serial.print(" pairbutton 1A: "); Serial.print(pairbutton1A); Serial.print(" 1B: "); Serial.print(pairbutton1B); Serial.print(" 2A: "); Serial.print(pairbutton2A); Serial.print(" 2B: "); Serial.print(pairbutton2B); Serial.println();
   analogWrite(MOTOR1_PIN, packet.motor1);
   analogWrite(MOTOR2_PIN, packet.motor2);
@@ -97,5 +100,6 @@ void onPacketReceived(Packet& packet) {
   digitalWrite(PAIRBUTTON_1B_OUT_PIN, pairbutton1B);
   digitalWrite(PAIRBUTTON_2A_OUT_PIN, pairbutton2A);
   digitalWrite(PAIRBUTTON_2B_OUT_PIN, pairbutton2B);
+  analogWrite(A2_PWM_PIN, a2_pwm);
     
 }
