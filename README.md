@@ -1,8 +1,70 @@
-# grasscutter
+# RC firmware
 
-Ηλεκτροκίνητο χορτοκοπτικό με αρκετό Γρανάζη μέσα :-). Το project αυτό αφορά κυρίως το λογισμικό.
+Arduino based firmware for remote controlled vehicles. This repository includes two different arduino based projects for transmitter and receiver respectively. Communication is one-way.
 
-### Κωδικοποίηση πορείας
+## Transmitter
+
+The transmitter consists of an Arduino nano micro controller, a joystick and an RF24 communication board. All sorts of driving commands like foward, backward, left and right and throttle are encoded in two sets of values for the left and right motors respectively and transmitted as a packet over RF. Transmitter reads analog values process them and sends to the receiver (the vehicle).
+
+Besides the driving commands, the communication protocol supports more operational options. Such slots could be used for controlling the vehicles lights, play a sound or perform other actions depending on the actual capabilities of the vehicle.
+
+
+The transmitter features:
+
+* **Analog input calibarion**. Different analog input controllers (joystics) can be used. An input device is calibrared the first time its used or when the operator triggers the `calibrate` button.
+* **Normalization and tolerance**. Driving input values are normalized within limits and a tolerance threshold can be supplied to filter out noise
+* **Configuration persistance**. All configuration settings are peristed on the transmitter board's flash memory.
+* Easy debugging through TX/RX arduino pins.
+
+## Receiver
+
+The receiver reads the incoming packet and drives the motors accordingly by encoding these values over PWM to *an external driver circuit*. Other information is also processed at this stage and feeds the board's pins.
+
+The receiver features:
+
+* **CRC based packet verification**. The incoming packet is validated using a lightweight CRC algorithm.
+* **Low latency**. The system can transmit and process without issues over 50 packets per second. 
+* **Automatic halt**. In case communication is lost or several packets are lost the vehicle is brought to halt.
+* Easy debugging through TX/RX arduino pins.
+
+## Calibration
+
+When the system is first used it passes through a calibration stage (arduino PIN 3). From the operator point of view this involves letting the joystick settle and press calibration button. Then move the joystick in all possible extends. Once all extremes are covered, press the calibration button again. That's it. All center and extreme values are now stored in flash memory.
+
+You can later perform the calibation again by pressing the calibrate button again.
+
+## Build and deploy
+
+Both transmitter (sender) and receiver firmware is implemented as an arduino project. **arduino-mk** makefiles are also available for fast and automated iterations and are the recommended way to deploy on the actual boards and further develop the system.
+
+To install arduino-mk on ubuntu:
+
+    $ sudo apt install arduino-mk
+
+and from `sender`/`receiver` directory execute:    
+
+    $ MONITOR_PORT=/dev/ttyUSB0 BOARD_SUB=atmega328old BOARD_TAG=nano make && MONITOR_PORT=/dev/ttyUSB0 BOARD_SUB=atmega328old BOARD_TAG=nano make upload && MONITOR_PORT=/dev/ttyUSB0 BOARD_SUB=atmega328old BOARD_TAG=nano make monitor
+
+This one-liner will build, upload and and start monitoring the device in the current terminal window. You can stop the monitor by pressing Ctrl+A+K (it runs `screen` underneath).
+ 
+Of cource, such monitoring terminals can run for both the sender and receiver simultaneously to give a better overview of the comminication from both ends. 
+ 
+### Environment
+
+Some additional environment variables may need some tweaking in case arduino-mk builds don't work right away. To get an idea, here is what works in my system. 
+
+    cat ~/.bashrc
+    ...
+    export ARDUINO_DIR=/home/nando/bin/arduino-1.8.13
+    export ARDMK_DIR=/usr/share/arduino
+    export AVR_TOOLS_DIR=/
+    
+You can find more on arduino make here [https://github.com/sudar/Arduino-Makefile](https://github.com/sudar/Arduino-Makefile)
+
+
+## Internals
+
+To get an idea of the protocol and the driving algorithm, here is a code snippet taken from `comm.h` and `sender.h.
 
 ```
 #define sensorbit_BACKWARD 2 // zero is forward, 1 is backward
@@ -27,65 +89,41 @@ struct Packet {
   ...
 ```
 
-#### Normalization 
 
-Κρατάμε το joystick έτσι ώστε η ωμική αντίσταση να αυξάνει έαν το σπρώξουμε εμπρός ή αριστερά. Στην ελεύθερη θέση, η ωμική αντίσταση είναι περίπου το μισό της μέγιστης και στα δύο ποτενσιόμετρα (~512). Οι τιμές αυτές θα αναχθούν αρχικά σε ένα πιο βολικό εύρος από 0-255 με το 0 και στους δύο άξονες να σημαίνει ελεύθερη θέση με δύο πρόσθετα bits να δηλώνουν την κατεύθυνση. Η αναγωγή αυτή ονομάζεται normalization.
+#### Normalization  phase
 
-Η πορεία του οχήματος τώρα καθορίζεται από 4 παραμέτρους. Τις τιμές (0-255) fbNormalized, lrNormalized που παριστάνουν τον _μέτρο_ της ταχύτητας που θέλουμε το κινηθούμε ή να στρίψουμε καθώς και δύο boolean τιμές sender.h/`sensorbit_BACKWARD`, sender.h/`sensorbit_LEFT` που ορίζουν την κατεύθινση της πορείας ή στροφής. Όταν το `sensorbit_BACKWARD` είναι false κινούμαστε εμπρός (FORWARD). Διαφορετικά πίσω. Αντίστοιχα όταν το `sensorbit_LEFT` είναι false στρίβουμε δεξιά. Διαφερετικά αριστερά. 
+Let's assume that the joystick is settling free in the center. At this position, the resistance of both axis will be almost half in both potensiometers (~512). This values will be convertes to more convenient range within 0-255. In both axis, 0  means that the joystick is resting whereas there are two additional bits conveying the direction of the movement. This conversion is called **normalization**.
+
+The movement of the vehicle is now determined from 4 parameters in pairs. So, for forward/backward movements we have `fbNormalized`in the range 0-255 that is the magnitude of the speed and a boolean values representing the direction for such movement. Forward or backward. Likewise, `lrNormalized`is the magnitude of turning left or right and is complemented by a boolean value representing whether it's left or right. This is part of the `SensorData` data structure. 
 
 #### Zero tolerance
 
-Στη συνέχεια, πετάμε τις πολύ μικρές τιμές για τα fbNormalized, lrNormalized. Οτιδήποτε είναι μικρότερο από το sender.h/`ZERO_TOLERANCE` γίνεται 0. Η τρέχουσα οριακή τιμή είναι 20. Μαζί με τις τιμές, τα αντίστοιχα direction bits `sensorbit_LEFT/RIGHT`,  γίνονται 0. Αυτό κάνει τον αλγόριθμο πιο καθαρό ενώ διόρθωσε και ένα περίεργο bug στη πορεία.
+When reading from an analog input device there will probably be some "noise" like reading that should be ingored. This is achieved by using a tolerance factor. This is a below threashold below which `fb/lrNormalized` will be considered 0. By default it's set to 20 through ZERO_THRESHOLD define. 
 
 #### Throttle
 
-Πριν φύγουν για τον δέκτη, τα fbNormalized, lrNormalized θα μετατραπούν σε τιμές throttle που θα τροφοδοτήσουν τα δύο μοτέρ. Το γκάζι για το αριστερό μοτέρ (κινούμενοι προς τα εμπρός) είναι το comm.h/`Packet.motor1`. Για το δεξί το comm.h/`Packet.motor2`. Μία δεξιά στροφή λοιπόν θα μεταφραστεί με μεγαλύτερη τιμή για το motor1 και μικρότερη για το motor2. Η _φορά_ κίνησης των μοτέρ ορίζεται στα comm.h/`Packet.bits`. Ισχύει και εδώ η ιδιότητα της αντιστροφής. Αν το `packetbit_MOTOR1` είναι false τότε έχουμε κίνηση προς τα εμπρός. Διαφορετικά προς τα πίσω. Ομοίως για το `packetbit_MOTOR2`.
-
-### Sender serial monitor
-
-Για να παρακολουθείται η λειτουργία του sender προστέθηκε νέα software serial θύρα στο #14. Είναι στα pins D2,D4. Η κύρια σειριακή θύρα, - pins TX,RX - έχει δεσμευτεί για την επικοινωνία με τον receiver. Για να κάνεις monitor:
-
-1. Δώσε ρεύμα στο κύριο κύκλωμα του sender.
-2. Σύνδεσε την εξωτερική  USB-to-serial κάρτα στον Η/Υ. Θα δμιουργηθεί ένα νέο usb device. Στην περίπτωση μας το `/dev/ttyUSB1`.
-3. Ρύθμισε το νέο device.
-
-    $ stty -F /dev/ttyUSB1 cs8 38400 -ignbrk -brkint -icrnl -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts
-
-4. Άνοιξε ένα τερματικό να ακούει το device.  
-
-    $ cat < /dev/ttyUSB1
-
-Ό,τι μήνυμα γραφτεί στο mySerial stream του arduino πρέπει τώρα να εμφανιστεί στη οθόνη.
+Before being transmitted `fb/lrNormalized`/direction value pairs will be processed and encoded as values for the `motor1`, and `motor2` variables of the `Packet` protocol structure and direction bits. For the left motor comm.h/`Packet.motor1`. For the right, it's comm.h/`Packet.motor2`. Thus, a right turn will be translated to a bigger value for motor1 and a smaller for motor2. The direction of the motors is in comm.h/`Packet.bits`, If `packetbit_MOTOR1` is false the we are moving forward. Otherwise backward. Same goes for `packetbit_MOTOR2`.
 
 
-## Troubleshooting
+### Sender serial monitor (n/a)
 
-Για να φορτώσεις νέο πρόγραμμα στις σε sender ή receiver πρέπει να αποσυνδέσεις τα καλώδια TX/RX με οποία επικοινωνούν οι πλακέτες μεταξύ τους (εάν χρησιμοποιείς σύνδεση μέσω καλωδίου και όχι RF τουλάχιστον). 
+In the route of the development of this system, default TX/RX pins were reserved for the communication protocol. For monitoring and debugging a software serial implementation on pins D2, D4 was used. Though this is not the case any more, i'm taking this down as a reference.
+
+To monitor this software serial port:
+
+* Supply power to the main board of the sender.
+* Connect the external USB-to-serial board (yes, you'll need a couple of those) to the development laptop. A new usb device will appear. In our case is was `/dev/ttyUSB1`.
+* Configure the new device
+
+    `$ stty -F /dev/ttyUSB1 cs8 38400 -ignbrk -brkint -icrnl -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts`
+
+* Start a terminal that listens to the device.
+
+	 `$ cat < /dev/ttyUSB1`
+
+Whatever is written to mySerial stream of the arduino board should now appean on the screen.
 
 
-### Quick deployment - arduino-mk
-
-Ο χρόνος αναπτυξής μπορεί να περιοριστεί σημαντικά αν χρησιμοποιηθούν το make για build και "deployment" αντί για τον arduino IDE. Σε ubunt αυτό γινεται με:
-
-    $ sudo apt install arduino-mk
-    
-και από τον κατάλογο του sender/receiver:
-
-    $ MONITOR_PORT=/dev/ttyUSB0 BOARD_SUB=atmega328old BOARD_TAG=nano make && MONITOR_PORT=/dev/ttyUSB0 BOARD_SUB=atmega328old BOARD_TAG=nano make upload && MONITOR_PORT=/dev/ttyUSB0 BOARD_SUB=atmega328old BOARD_TAG=nano make monitor
-    
-Το παραπάνω, θα κάνει build, να ανεβάσει και να ανοίξει το monitor στο τρέχον τερματικό. Κλείσε με Ctrl+A +K (τρέχει screen από κάτω).
-
-Περισσότερα από ένα τερματικά μπορούν να παίξουν παράλληλα. Κάθε project περιέχει ένα πρόσθετο Makefile ενώ τα project εξακολουθούν να είναι επεξεργάσιμα με τον arduino IDE.
-
-θέλει και κάποιες περιβαλλοντικές μεταβλητές. Στην δικιά μου περίπτωση είναι:
-
-    cat ~/.bashrc
-    ...
-    export ARDUINO_DIR=/home/nando/bin/arduino-1.8.13
-    export ARDMK_DIR=/usr/share/arduino
-    export AVR_TOOLS_DIR=/
-    
-Δες αυτό για περισσότερα - https://github.com/sudar/Arduino-Makefile
 
 
 
